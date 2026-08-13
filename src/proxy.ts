@@ -1,16 +1,55 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+import { updateSession } from '@/lib/supabase/middleware';
 
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+function redirectWithSession(
+  request: NextRequest,
+  pathname: string,
+  sessionResponse: NextResponse
+) {
+  const redirectUrl = request.nextUrl.clone();
+  redirectUrl.pathname = pathname;
+  redirectUrl.search = '';
+  const redirectResponse = NextResponse.redirect(redirectUrl);
+  sessionResponse.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie.name, cookie.value);
+  });
+  return redirectResponse;
+}
+
+export async function proxy(request: NextRequest) {
+  const { response, user } = await updateSession(request);
+  const { pathname } = request.nextUrl;
+
+  const isDashboardRoute = pathname.startsWith('/dashboard');
+  const isAdminSignIn = pathname === '/admin/sign-in' || pathname.startsWith('/admin/sign-in/');
+
+  if (isDashboardRoute && !user) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/admin/sign-in';
+    redirectUrl.searchParams.set('next', pathname);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  }
+
+  if (isAdminSignIn && user) {
+    return redirectWithSession(request, '/dashboard/overview', response);
+  }
+
+  // Legacy Clerk auth URLs → admin sign-in (no customer auth)
+  if (pathname.startsWith('/auth/sign-in') || pathname.startsWith('/auth/sign-up')) {
+    return redirectWithSession(request, '/admin/sign-in', response);
+  }
+
+  return response;
+}
+
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
     '/(api|trpc)(.*)'
   ]
 };

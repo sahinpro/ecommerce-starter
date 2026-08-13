@@ -5,10 +5,7 @@ import {
   productQueryOptions,
   relatedProductsQueryOptions
 } from '@/features/storefront/api/queries';
-import {
-  getProductBySlug,
-  getRelatedProducts
-} from '@/features/storefront/api/service';
+import { getProductBySlug, getRelatedProducts } from '@/features/storefront/api/service';
 import { ProductDetailView } from '@/features/storefront/components/product/product-detail-view';
 import { getQueryClient } from '@/lib/query-client';
 
@@ -30,12 +27,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const related = await getRelatedProducts(product.id, product.category_slug);
+  const categorySlug = product.category_slug ?? '';
+  const related = categorySlug ? await getRelatedProducts(product.id, categorySlug) : [];
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(productQueryOptions(slug));
-  void queryClient.prefetchQuery(
-    relatedProductsQueryOptions(product.id, product.category_slug)
-  );
+  if (categorySlug) {
+    void queryClient.prefetchQuery(relatedProductsQueryOptions(product.id, categorySlug));
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

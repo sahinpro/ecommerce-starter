@@ -1,8 +1,9 @@
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
-import { getQueryClient } from '@/lib/query-client';
-import { productByIdOptions } from '@/features/products/api/queries';
+
 import PageContainer from '@/components/layout/page-container';
+import { categoriesQueryOptions } from '@/features/products/api/queries';
 import ProductViewPage from '@/features/products/components/product-view-page';
+import { getQueryClient } from '@/lib/query-client';
 
 export const metadata = {
   title: 'Dashboard : Product View'
@@ -14,9 +15,8 @@ export default async function Page(props: PageProps) {
   const params = await props.params;
   const queryClient = getQueryClient();
 
-  if (params.productId !== 'new') {
-    void queryClient.prefetchQuery(productByIdOptions(Number(params.productId)));
-  }
+  void queryClient.prefetchQuery(categoriesQueryOptions());
+  // Product detail needs the browser auth session for drafts/archived (staff RLS).
 
   return (
     <PageContainer>

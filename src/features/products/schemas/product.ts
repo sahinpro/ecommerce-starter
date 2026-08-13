@@ -1,27 +1,39 @@
-import * as z from 'zod';
+import { z } from 'zod';
 
-const MAX_FILE_SIZE = 5_000_000;
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+import {
+  productBadgeSchema,
+  productMutationSchema,
+  productStatusSchema
+} from '@/features/catalog/schemas/product';
+import { postgresUuidSchema } from '@/lib/postgres-uuid';
 
-export const productSchema = z.object({
-  image: z
-    .any()
-    .refine((files) => files?.length == 1, 'Image is required.')
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, 'Max file size is 5MB.')
-    .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      '.jpg, .jpeg, .png and .webp files are accepted.'
-    ),
-  name: z.string().min(2, 'Product name must be at least 2 characters.'),
-  category: z.string().min(1, 'Please select a category'),
-  price: z.number({ message: 'Price is required' }),
-  description: z.string().min(10, 'Description must be at least 10 characters.')
+const slugSchema = z
+  .string()
+  .trim()
+  .min(1, 'Slug is required')
+  .max(160, 'Slug is too long')
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and hyphens only');
+
+/** Dashboard create/edit form values (badge '' = none). */
+export const productFormSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(200),
+  slug: slugSchema,
+  description: z.string().trim().max(10000),
+  category_id: z.union([postgresUuidSchema('Select a category'), z.literal('')]),
+  product_type: z.string().trim().max(80),
+  badge: z.union([productBadgeSchema, z.literal('')]),
+  featured: z.boolean(),
+  status: productStatusSchema,
+  price: z
+    .number({ message: 'Price is required' })
+    .finite()
+    .nonnegative('Price must be zero or greater'),
+  compare_at_price: z.union([z.number().finite().nonnegative(), z.literal(''), z.null()]),
+  composition: z.string().trim().max(2000),
+  care: z.string().trim().max(2000),
+  size_fit: z.string().trim().max(2000)
 });
 
-export type ProductFormValues = {
-  image: File[] | undefined;
-  name: string;
-  category: string;
-  price: number | undefined;
-  description: string;
-};
+export type ProductFormValues = z.input<typeof productFormSchema>;
+
+export { productMutationSchema, productStatusSchema, productBadgeSchema };

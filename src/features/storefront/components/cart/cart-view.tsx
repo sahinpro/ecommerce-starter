@@ -22,10 +22,7 @@ export function CartView() {
         <p className='text-muted-foreground mt-4 text-sm'>
           Discover our latest arrivals and add something you love.
         </p>
-        <Link
-          href='/shop'
-          className={cn(buttonVariants(), 'mt-8 rounded-none px-8 uppercase')}
-        >
+        <Link href='/shop' className={cn(buttonVariants(), 'mt-8 rounded-none px-8 uppercase')}>
           Continue Shopping
         </Link>
       </div>
@@ -62,7 +59,8 @@ export function CartView() {
                     <button
                       type='button'
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className='border-border size-8 border text-sm'
+                      className='border-border size-8 cursor-pointer border text-sm'
+                      aria-label='Decrease quantity'
                     >
                       −
                     </button>
@@ -70,7 +68,8 @@ export function CartView() {
                     <button
                       type='button'
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className='border-border size-8 border text-sm'
+                      className='border-border size-8 cursor-pointer border text-sm'
+                      aria-label='Increase quantity'
                     >
                       +
                     </button>

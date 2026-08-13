@@ -1,3 +1,15 @@
+/* Brand tokens always available so storefront colors do not depend on the active admin theme */
+:root {
+  --sukoon-black: #120d12;
+  --sukoon-dark: #1b1a15;
+  --sukoon-footer: #f7f9f2;
+  --sukoon-ivory: #fffff0;
+  --sukoon-muted: #5d5d5d;
+  --sukoon-header-height: 200px;
+  --sukoon-announcement-height: 40px;
+  --sukoon-nav-height: 160px;
+}
+
 [data-theme='sukoon'] {
   --background: oklch(1 0 0);
   --foreground: oklch(0.15 0 0);
@@ -31,9 +43,10 @@
   --sidebar-accent-foreground: oklch(0.15 0 0);
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.15 0 0);
-  --font-sans: Inter, sans-serif;
-  --font-serif: 'Playfair Display', Georgia, serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: var(--font-inter), Inter, sans-serif;
+  /* Figma display/editorial uses Georgia; keep Playfair as secondary */
+  --font-serif: Georgia, 'Times New Roman', var(--font-playfair-display), serif;
+  --font-mono: var(--font-mono), 'Geist Mono', monospace;
   --radius: 0rem;
   --shadow-x: 0px;
   --shadow-y: 0px;
@@ -51,10 +64,44 @@
   --shadow-2xl: none;
   --tracking-normal: 0.02em;
   --spacing: 0.25rem;
+  font-feature-settings:
+    'kern' 1,
+    'liga' 1;
 }
 
-[data-theme='sukoon'] {
-  font-feature-settings: 'kern' 1, 'liga' 1;
+[data-theme='sukoon'].dark {
+  --background: oklch(0.12 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.16 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.98 0 0);
+  --primary-foreground: oklch(0.12 0 0);
+  --secondary: oklch(0.22 0 0);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.22 0 0);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.28 0 0);
+  --ring: oklch(0.7 0 0);
+  --chart-1: oklch(0.9 0 0);
+  --chart-2: oklch(0.7 0 0);
+  --chart-3: oklch(0.55 0 0);
+  --chart-4: oklch(0.4 0 0);
+  --chart-5: oklch(0.25 0 0);
+  --sidebar: oklch(0.16 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.98 0 0);
+  --sidebar-primary-foreground: oklch(0.12 0 0);
+  --sidebar-accent: oklch(0.22 0 0);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.28 0 0);
+  --sidebar-ring: oklch(0.7 0 0);
 }
 
 [data-theme='sukoon'] .font-serif {

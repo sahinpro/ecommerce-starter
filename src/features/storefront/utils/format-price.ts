@@ -1,5 +1,7 @@
+import { formatMoney } from '@/lib/format-money';
+
 export function formatPrice(amount: number): string {
-  return `${amount.toLocaleString('en-BD')} TK`;
+  return formatMoney(amount, 'BDT');
 }
 
 export function formatBadge(badge: string | null): string {

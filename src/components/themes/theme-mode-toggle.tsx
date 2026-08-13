@@ -6,10 +6,14 @@ import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Kbd } from '@/components/ui/kbd';
 
 export function ThemeModeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleThemeToggle = React.useCallback(
     (e?: React.MouseEvent) => {
@@ -21,7 +25,6 @@ export function ThemeModeToggle() {
         return;
       }
 
-      // Set coordinates from the click event
       if (e) {
         root.style.setProperty('--x', `${e.clientX}px`);
         root.style.setProperty('--y', `${e.clientY}px`);
@@ -43,15 +46,22 @@ export function ThemeModeToggle() {
             size='icon'
             className='group/toggle size-8'
             onClick={handleThemeToggle}
+            aria-label='Toggle theme'
           />
         }
       >
-        <Icons.brightness />
+        {mounted ? (
+          resolvedTheme === 'dark' ? (
+            <Icons.moon className='size-4' />
+          ) : (
+            <Icons.sun className='size-4' />
+          )
+        ) : (
+          <Icons.brightness className='size-4' />
+        )}
         <span className='sr-only'>Toggle theme</span>
       </TooltipTrigger>
-      <TooltipContent>
-        Toggle theme <Kbd>D D</Kbd>
-      </TooltipContent>
+      <TooltipContent>Toggle theme</TooltipContent>
     </Tooltip>
   );
 }

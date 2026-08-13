@@ -1,21 +1,24 @@
 'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+
+import { Icons } from '@/components/icons';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { deleteProductMutation } from '../../api/mutations';
+
+import { archiveProductMutation } from '../../api/mutations';
 import type { Product } from '../../api/types';
-import { Icons } from '@/components/icons';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
 
 interface CellActionProps {
   data: Product;
@@ -25,14 +28,14 @@ export function CellAction({ data }: CellActionProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const deleteMutation = useMutation({
-    ...deleteProductMutation,
+  const archiveMutation = useMutation({
+    ...archiveProductMutation,
     onSuccess: () => {
-      toast.success('Product deleted successfully');
+      toast.success('Product archived');
       setOpen(false);
     },
-    onError: () => {
-      toast.error('Failed to delete product');
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to archive product');
     }
   });
 
@@ -41,8 +44,8 @@ export function CellAction({ data }: CellActionProps) {
       <AlertModal
         isOpen={open}
         onClose={() => setOpen(false)}
-        onConfirm={() => deleteMutation.mutate(data.id)}
-        loading={deleteMutation.isPending}
+        onConfirm={() => archiveMutation.mutate(data.id)}
+        loading={archiveMutation.isPending}
       />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger render={<Button variant='ghost' className='h-8 w-8 p-0' />}>
@@ -53,11 +56,11 @@ export function CellAction({ data }: CellActionProps) {
           <DropdownMenuGroup>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
           </DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => router.push(`/dashboard/product/${data.id}`)}>
-            <Icons.edit className='mr-2 h-4 w-4' /> Update
+          <DropdownMenuItem onClick={() => router.push(`/dashboard/product/${data.slug}`)}>
+            <Icons.edit className='mr-2 h-4 w-4' /> Edit
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setOpen(true)}>
-            <Icons.trash className='mr-2 h-4 w-4' /> Delete
+            <Icons.archive className='mr-2 h-4 w-4' /> Archive
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

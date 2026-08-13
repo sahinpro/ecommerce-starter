@@ -2,12 +2,11 @@ import {
   IconAdjustmentsHorizontal,
   IconAlertCircle,
   IconAlertTriangle,
+  IconArchive,
   IconArrowRight,
   IconBell,
   IconBold,
   IconBox,
-  IconBrandGithub,
-  IconBrandTwitter,
   IconBrightness,
   IconCalendar,
   IconCheck,
@@ -25,9 +24,7 @@ import {
   IconCircleX,
   IconClipboardText,
   IconClock,
-  IconCode,
   IconCommand,
-  IconCreditCard,
   IconDeviceLaptop,
   IconDots,
   IconDotsVertical,
@@ -36,45 +33,39 @@ import {
   IconEyeOff,
   IconFile,
   IconFileText,
-  IconFileTypePdf,
   IconFileTypeDoc,
+  IconFileTypePdf,
   IconFileTypeXls,
   IconFileZip,
-  IconFolder,
   IconGripVertical,
   IconHeart,
   IconHelpCircle,
   IconInfoCircle,
   IconItalic,
   IconLayoutDashboard,
-  IconLayoutKanban,
   IconLayoutSidebar,
   IconLoader2,
   IconLock,
   IconLogin,
   IconLogout,
-  IconMessage,
+  IconMenu2,
   IconMinus,
   IconMoon,
-  IconMusic,
   IconPalette,
   IconPaperclip,
   IconPhone,
   IconPhoto,
-  IconPizza,
   IconPlus,
   IconProps,
   IconRosetteDiscountCheck,
   IconSearch,
   IconSelector,
-  IconShoppingBag,
   IconSend,
   IconSettings,
   IconShare,
+  IconShoppingBag,
   IconSlash,
   IconSparkles,
-  IconStack2,
-  IconStar,
   IconSun,
   IconTrash,
   IconTrendingDown,
@@ -88,7 +79,6 @@ import {
   IconUserX,
   IconUsers,
   IconVideo,
-  IconCrown,
   IconX
 } from '@tabler/icons-react';
 
@@ -104,7 +94,6 @@ export const Icons = {
   circleCheck: IconCircleCheck,
   close: IconX,
   clock: IconClock,
-  code: IconCode,
   dots: IconDots,
   ellipsis: IconDotsVertical,
   externalLink: IconExternalLink,
@@ -116,6 +105,7 @@ export const Icons = {
   shoppingBag: IconShoppingBag,
   settings: IconSettings,
   trash: IconTrash,
+  archive: IconArchive,
 
   // Navigation / Chevrons
   chevronDown: IconChevronDown,
@@ -129,25 +119,21 @@ export const Icons = {
 
   // Layout
   dashboard: IconLayoutDashboard,
-  kanban: IconLayoutKanban,
   panelLeft: IconLayoutSidebar,
+  menu: IconMenu2,
 
   // User
   user: IconUser,
   user2: IconUserCircle,
   account: IconUserCircle,
-  profile: IconUser,
   employee: IconUserX,
   userPen: IconUserEdit,
   teams: IconUsers,
 
   // Brand
-  github: IconBrandGithub,
-  twitter: IconBrandTwitter,
   logo: IconCommand,
 
   // Communication
-  chat: IconMessage,
   notification: IconBell,
   phone: IconPhone,
   video: IconVideo,
@@ -162,7 +148,6 @@ export const Icons = {
   fileTypeXls: IconFileTypeXls,
   fileZip: IconFileZip,
   media: IconPhoto,
-  music: IconMusic,
 
   // Actions
   add: IconPlus,
@@ -187,17 +172,13 @@ export const Icons = {
   laptop: IconDeviceLaptop,
   palette: IconPalette,
 
-  // Commerce / Plans
-  billing: IconCreditCard,
-  creditCard: IconCreditCard,
+  // Commerce
   product: IconBox,
-  pro: IconCrown,
-  exclusive: IconStar,
   sparkles: IconSparkles,
   badgeCheck: IconRosetteDiscountCheck,
   lock: IconLock,
 
-  // Data / Charts
+  // Data
   trendingDown: IconTrendingDown,
   trendingUp: IconTrendingUp,
   eyeOff: IconEyeOff,
@@ -217,11 +198,8 @@ export const Icons = {
   toastLoading: IconLoader2,
 
   // Misc
-  pizza: IconPizza,
-  workspace: IconFolder,
   forms: IconClipboardText,
   slash: IconSlash,
   calendar: IconCalendar,
-  galleryVerticalEnd: IconStack2,
   moreHorizontal: IconDots
 };

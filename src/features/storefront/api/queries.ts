@@ -10,6 +10,7 @@ import {
   getHeroContent,
   getProductBySlug,
   getProducts,
+  getProductsByIds,
   getRelatedProducts,
   getStories
 } from './service';
@@ -19,8 +20,9 @@ export const storefrontKeys = {
   all: ['storefront'] as const,
   categories: () => [...storefrontKeys.all, 'categories'] as const,
   category: (slug: string) => [...storefrontKeys.all, 'category', slug] as const,
-  products: (filters: ProductFilters) =>
-    [...storefrontKeys.all, 'products', filters] as const,
+  products: (filters: ProductFilters) => [...storefrontKeys.all, 'products', filters] as const,
+  productsByIds: (ids: string[]) =>
+    [...storefrontKeys.all, 'products-by-ids', [...ids].sort()] as const,
   product: (slug: string) => [...storefrontKeys.all, 'product', slug] as const,
   featured: () => [...storefrontKeys.all, 'featured'] as const,
   related: (id: string, category: string) =>
@@ -28,7 +30,7 @@ export const storefrontKeys = {
   stories: () => [...storefrontKeys.all, 'stories'] as const,
   tiles: () => [...storefrontKeys.all, 'tiles'] as const,
   benefits: () => [...storefrontKeys.all, 'benefits'] as const,
-  filters: () => [...storefrontKeys.all, 'filters'] as const,
+  filters: (category?: string) => [...storefrontKeys.all, 'filters', category ?? 'all'] as const,
   hero: () => [...storefrontKeys.all, 'hero'] as const
 };
 
@@ -54,6 +56,13 @@ export const productQueryOptions = (slug: string) =>
   queryOptions({
     queryKey: storefrontKeys.product(slug),
     queryFn: () => getProductBySlug(slug)
+  });
+
+export const productsByIdsQueryOptions = (ids: string[]) =>
+  queryOptions({
+    queryKey: storefrontKeys.productsByIds(ids),
+    queryFn: () => getProductsByIds(ids),
+    enabled: ids.length > 0
   });
 
 export const featuredProductsQueryOptions = () =>
@@ -86,10 +95,10 @@ export const benefitsQueryOptions = () =>
     queryFn: getBenefits
   });
 
-export const filterOptionsQueryOptions = () =>
+export const filterOptionsQueryOptions = (category?: string) =>
   queryOptions({
-    queryKey: storefrontKeys.filters(),
-    queryFn: getFilterOptions
+    queryKey: storefrontKeys.filters(category),
+    queryFn: () => getFilterOptions(category)
   });
 
 export const heroQueryOptions = () =>

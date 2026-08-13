@@ -2,9 +2,10 @@
 
 import { cn } from '@/lib/utils';
 
-import { filterOptions } from '../../constants/mock-data';
+import type { FilterOptions } from '../../api/types';
 
 type FilterSheetProps = {
+  options: FilterOptions;
   selectedSizes: string[];
   selectedColors: string[];
   selectedTypes: string[];
@@ -15,13 +16,7 @@ type FilterSheetProps = {
   onClear: () => void;
 };
 
-function FilterGroup({
-  title,
-  children
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className='space-y-4'>
       <p className='text-xs tracking-[0.15em] uppercase'>{title}</p>
@@ -49,10 +44,7 @@ function FilterChip({
       )}
     >
       <span
-        className={cn(
-          'size-1.5 rounded-full',
-          active ? 'bg-foreground' : 'bg-muted-foreground/40'
-        )}
+        className={cn('size-1.5 rounded-full', active ? 'bg-foreground' : 'bg-muted-foreground/40')}
       />
       {label}
     </button>
@@ -60,6 +52,7 @@ function FilterChip({
 }
 
 export function FilterPanel({
+  options,
   selectedSizes,
   selectedColors,
   selectedTypes,
@@ -83,7 +76,7 @@ export function FilterPanel({
       </div>
 
       <FilterGroup title='Product Type'>
-        {filterOptions.product_types.map((type) => (
+        {options.product_types.map((type) => (
           <FilterChip
             key={type}
             label={type}
@@ -94,7 +87,7 @@ export function FilterPanel({
       </FilterGroup>
 
       <FilterGroup title='Size'>
-        {filterOptions.sizes.map((size) => (
+        {options.sizes.map((size) => (
           <FilterChip
             key={size}
             label={size}
@@ -105,7 +98,7 @@ export function FilterPanel({
       </FilterGroup>
 
       <FilterGroup title='Colour'>
-        {filterOptions.colors.map((color) => (
+        {options.colors.map((color) => (
           <FilterChip
             key={color.name}
             label={color.name}

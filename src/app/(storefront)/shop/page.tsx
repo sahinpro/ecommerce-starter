@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
+import { FIGMA_PRIMARY_CATEGORIES } from '@/features/catalog/figma-taxonomy';
 import { productsQueryOptions } from '@/features/storefront/api/queries';
 import { ShopListing } from '@/features/storefront/components/shop/shop-listing';
 import { getQueryClient } from '@/lib/query-client';
@@ -21,12 +21,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     productsQueryOptions({ category: category ?? undefined, limit: 24 })
   );
 
-  const title =
-    category === 'new-arrivals'
-      ? 'New Arrivals'
-      : category
-        ? category.replace(/-/g, ' ')
-        : 'Shop All';
+  const known = FIGMA_PRIMARY_CATEGORIES.find((item) => item.slug === category);
+  const title = known?.name ?? (category ? category.replace(/-/g, ' ') : 'Shop All');
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

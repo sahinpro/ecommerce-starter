@@ -1,13 +1,19 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
-/** Browser client — wire when replacing mock service with Supabase */
+/**
+ * Browser Supabase client (anon key only).
+ * Used for client-side auth state and future public data reads.
+ * Never pass SUPABASE_SERVICE_ROLE_KEY here.
+ */
 export function createSupabaseBrowserClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    return null;
+    throw new Error(
+      'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables.'
+    );
   }
 
-  return createClient(url, key);
+  return createBrowserClient(url, key);
 }

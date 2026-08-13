@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-// import { persist } from 'zustand/middleware';
 import type { NotificationStatus, NotificationAction } from '@/components/ui/notification-card';
 
 export type Notification = {
@@ -23,25 +22,10 @@ type NotificationState = {
 const mockNotifications: Notification[] = [
   {
     id: '1',
-    title: 'New team member joined',
-    body: 'Sarah Connor has joined the Engineering workspace.',
+    title: 'Catalog sync reminder',
+    body: 'Review product listings before the next storefront publish.',
     status: 'unread',
     createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    actions: [
-      {
-        id: 'view',
-        label: 'View workspace',
-        type: 'redirect',
-        style: 'primary'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'New product added',
-    body: 'A new product "Dashboard Pro" has been added to the catalog.',
-    status: 'unread',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     actions: [
       {
         id: 'view-product',
@@ -52,15 +36,30 @@ const mockNotifications: Notification[] = [
     ]
   },
   {
+    id: '2',
+    title: 'New product draft',
+    body: 'A draft product is ready for review in the Products section.',
+    status: 'unread',
+    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+    actions: [
+      {
+        id: 'view-product',
+        label: 'Open products',
+        type: 'redirect',
+        style: 'primary'
+      }
+    ]
+  },
+  {
     id: '3',
-    title: 'Billing cycle updated',
-    body: 'Your Pro plan has been renewed. Next invoice on April 24, 2026.',
+    title: 'Dashboard overview',
+    body: 'Check empty-state metrics until live order analytics are connected.',
     status: 'unread',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     actions: [
       {
-        id: 'billing',
-        label: 'View billing',
+        id: 'view-overview',
+        label: 'Open overview',
         type: 'redirect',
         style: 'primary'
       }
@@ -68,14 +67,14 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '4',
-    title: 'Task assigned to you',
-    body: 'You have been assigned "Update dashboard analytics" on the Kanban board.',
+    title: 'Customer list ready',
+    body: 'Guest checkout customers will appear under Customers once orders go live.',
     status: 'read',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     actions: [
       {
-        id: 'open',
-        label: 'Open kanban',
+        id: 'view-customers',
+        label: 'View customers',
         type: 'redirect',
         style: 'primary'
       }
@@ -83,14 +82,14 @@ const mockNotifications: Notification[] = [
   },
   {
     id: '5',
-    title: 'New message from Alex',
-    body: 'Alex sent you a message: "Hey, can we sync on the overview dashboard?"',
+    title: 'Theme preference saved',
+    body: 'Your WhatsApp dashboard theme preference is stored on this device.',
     status: 'read',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
     actions: [
       {
-        id: 'open-chat',
-        label: 'Open chat',
+        id: 'view-overview',
+        label: 'Back to dashboard',
         type: 'redirect',
         style: 'primary'
       }
@@ -98,40 +97,33 @@ const mockNotifications: Notification[] = [
   }
 ];
 
-export const useNotificationStore = create<NotificationState>()(
-  // To enable persistence across refreshes, uncomment the persist wrapper below:
-  // persist(
-  (set, get) => ({
-    notifications: mockNotifications,
+export const useNotificationStore = create<NotificationState>()((set, get) => ({
+  notifications: mockNotifications,
 
-    markAsRead: (id) =>
-      set((state) => ({
-        notifications: state.notifications.map((n) =>
-          n.id === id ? { ...n, status: 'read' as const } : n
-        )
-      })),
+  markAsRead: (id) =>
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === id ? { ...n, status: 'read' as const } : n
+      )
+    })),
 
-    markAllAsRead: () =>
-      set((state) => ({
-        notifications: state.notifications.map((n) => ({
-          ...n,
-          status: 'read' as const
-        }))
-      })),
+  markAllAsRead: () =>
+    set((state) => ({
+      notifications: state.notifications.map((n) => ({
+        ...n,
+        status: 'read' as const
+      }))
+    })),
 
-    removeNotification: (id) =>
-      set((state) => ({
-        notifications: state.notifications.filter((n) => n.id !== id)
-      })),
+  removeNotification: (id) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id)
+    })),
 
-    addNotification: (notification) =>
-      set((state) => ({
-        notifications: [{ ...notification, status: 'unread' as const }, ...state.notifications]
-      })),
+  addNotification: (notification) =>
+    set((state) => ({
+      notifications: [{ ...notification, status: 'unread' as const }, ...state.notifications]
+    })),
 
-    unreadCount: () => get().notifications.filter((n) => n.status === 'unread').length
-  })
-  //   ,
-  //   { name: 'notifications' }
-  // )
-);
+  unreadCount: () => get().notifications.filter((n) => n.status === 'unread').length
+}));

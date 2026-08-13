@@ -1,23 +1,22 @@
-import { queryOptions } from '@tanstack/react-query';
-import { getProducts, getProductById } from './service';
+import {
+  adminProductsQueryOptions,
+  catalogKeys,
+  categoriesQueryOptions,
+  productByIdQueryOptions
+} from '@/features/catalog/queries';
 import type { Product, ProductFilters } from './types';
 
 export type { Product };
 
+export { catalogKeys, categoriesQueryOptions };
+
 export const productKeys = {
-  all: ['products'] as const,
-  list: (filters: ProductFilters) => [...productKeys.all, 'list', filters] as const,
-  detail: (id: number) => [...productKeys.all, 'detail', id] as const
+  all: catalogKeys.all,
+  list: (filters: ProductFilters) => catalogKeys.adminProducts(filters),
+  detail: (id: string) => catalogKeys.product(id)
 };
 
-export const productsQueryOptions = (filters: ProductFilters) =>
-  queryOptions({
-    queryKey: productKeys.list(filters),
-    queryFn: () => getProducts(filters)
-  });
+export const productsQueryOptions = (filters: ProductFilters = {}) =>
+  adminProductsQueryOptions(filters);
 
-export const productByIdOptions = (id: number) =>
-  queryOptions({
-    queryKey: productKeys.detail(id),
-    queryFn: () => getProductById(id)
-  });
+export const productByIdOptions = (id: string) => productByIdQueryOptions(id);

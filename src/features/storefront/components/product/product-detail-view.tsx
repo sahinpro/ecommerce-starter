@@ -23,17 +23,13 @@ type ProductDetailViewProps = {
 
 const detailTabs = ['Size / Fit', 'Composition', 'Care'] as const;
 
-function DetailTabs({
-  product
-}: {
-  product: Product;
-}) {
+function DetailTabs({ product }: { product: Product }) {
   const [openTab, setOpenTab] = useState<string | null>('Size / Fit');
 
   const content: Record<(typeof detailTabs)[number], string> = {
-    'Size / Fit': product.size_fit,
-    Composition: product.composition,
-    Care: product.care
+    'Size / Fit': product.size_fit ?? '',
+    Composition: product.composition ?? '',
+    Care: product.care ?? ''
   };
 
   return (
@@ -47,10 +43,7 @@ function DetailTabs({
           >
             {tab}
             <Icons.chevronDown
-              className={cn(
-                'size-4 transition-transform',
-                openTab === tab && 'rotate-180'
-              )}
+              className={cn('size-4 transition-transform', openTab === tab && 'rotate-180')}
             />
           </button>
           {openTab === tab ? (
@@ -68,16 +61,29 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const isWishlisted = useWishlistStore((s) => s.has(product.id));
 
-  const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(product.sizes[0]);
 
   function handleAddToCart() {
     if (!selectedColor || !selectedSize) {
-      toast.error('Please select size and color');
+      toast.warning('Select options', {
+        description: 'Please choose a size and color first.'
+      });
       return;
     }
-    addItem({ product, size: selectedSize, color: selectedColor });
-    toast.success('Added to cart');
+    const result = addItem({ product, size: selectedSize, color: selectedColor });
+    if (!result.ok) {
+      const isStock = /out of stock|only \d+ items are available/i.test(result.error);
+      if (isStock) {
+        toast.warning('Not enough stock', { description: result.error });
+      } else {
+        toast.error('Could not add to cart', { description: result.error });
+      }
+      return;
+    }
+    toast.success('Added to cart', {
+      description: `${product.name} · ${selectedSize} / ${selectedColor.name}`
+    });
   }
 
   return (
@@ -88,7 +94,7 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
             <div key={image.id} className='bg-muted relative aspect-[960/1087] w-full'>
               <Image
                 src={image.url}
-                alt={image.alt}
+                alt={image.alt ?? product.name}
                 fill
                 priority={index === 0}
                 className='object-cover'
@@ -120,7 +126,9 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
             <span className='text-lg'>{formatPrice(product.price)}</span>
           </div>
 
-          <p className='text-muted-foreground mt-6 text-sm leading-relaxed'>{product.description}</p>
+          <p className='text-muted-foreground mt-6 text-sm leading-relaxed'>
+            {product.description}
+          </p>
 
           <div className='mt-8 space-y-6'>
             <div className='flex items-center gap-4'>
@@ -184,10 +192,7 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
       ) : null}
 
       <div className='px-10 pb-10 lg:hidden'>
-        <Button
-          onClick={() => router.push('/cart')}
-          className='h-12 w-full rounded-none uppercase'
-        >
+        <Button onClick={() => router.push('/cart')} className='h-12 w-full rounded-none uppercase'>
           View Cart
         </Button>
       </div>

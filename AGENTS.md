@@ -2,23 +2,27 @@
 
 This file provides essential information for AI coding agents working on this project. It contains project-specific details, conventions, and guidelines that complement the README.
 
+> **Sukoon production note (Aug 2026):** This app is the Sukoon storefront + admin dashboard.  
+> Auth is **Supabase** (admin/staff only). **Clerk is not used.**  
+> Catalog collections: Palestine · Sukoon · Sabr · Tawakkul · Brotherhood.  
+> Prefer [README.md](./README.md) and [docs/phase5-collections-audit.md](./docs/phase5-collections-audit.md) over any Clerk / starter-template sections below that may still mention them historically.
+
 ---
 
 ## Project Overview
 
-**Next.js Admin Dashboard Starter** is a production-ready admin dashboard template built with:
+**Sukoon** — Next.js storefront + admin dashboard (single Vercel project):
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript 5.7
 - **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui (New York style)
-- **Authentication**: Clerk (with Organizations/Billing support)
-- **Error Tracking**: Sentry
-- **Charts**: Recharts
+- **UI Components**: shadcn/ui
+- **Authentication**: Supabase Auth (admin/staff only; guest storefront)
+- **Media**: Cloudinary
 - **Containerization**: Docker (Node.js & Bun Dockerfiles)
 - **Package Manager**: Bun (preferred) or npm
 
-The project follows a feature-based folder structure designed for scalability in SaaS applications, internal tools, and admin panels.
+Feature-based folder structure under `src/features/` (catalog, storefront, products, users, auth, …).
 
 ---
 
@@ -86,9 +90,6 @@ The project follows a feature-based folder structure designed for scalability in
 │   ├── dashboard/         # Dashboard routes
 │   │   ├── overview/      # Parallel routes (@area_stats, @bar_stats, etc.)
 │   │   ├── product/       # Product management pages
-│   │   ├── kanban/        # Kanban board page
-│   │   ├── chat/          # Messaging page
-│   │   ├── notifications/ # Notifications page
 │   │   ├── workspaces/    # Organization management
 │   │   ├── billing/       # Subscription billing
 │   │   ├── exclusive/     # Pro plan feature example
@@ -122,10 +123,6 @@ The project follows a feature-based folder structure designed for scalability in
 │   ├── users/             # User management (React Query + nuqs)
 │   │   ├── api/           # Same pattern: types.ts → service.ts → queries.ts
 │   │   └── components/    # Listing, table components
-│   ├── react-query-demo/  # React Query showcase (Pokemon API)
-│   ├── kanban/            # Kanban board with dnd-kit
-│   ├── chat/              # Messaging UI (conversations, bubbles, composer)
-│   ├── notifications/     # Notification center & store
 │   └── profile/           # Profile management
 │
 ├── config/                # Configuration files
@@ -213,20 +210,6 @@ NEXT_PUBLIC_CLERK_SIGN_UP_URL="/auth/sign-up"
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard/overview"
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard/overview"
 ```
-
-### Optional for Error Tracking (Sentry)
-
-```env
-NEXT_PUBLIC_SENTRY_DSN=https://...@....ingest.sentry.io/...
-NEXT_PUBLIC_SENTRY_ORG=your-org
-NEXT_PUBLIC_SENTRY_PROJECT=your-project
-SENTRY_AUTH_TOKEN=sntrys_...
-NEXT_PUBLIC_SENTRY_DISABLED="false"  # Set to "true" to disable in dev
-```
-
-**Note**: Clerk supports "keyless mode" - the app works without API keys for initial development.
-
----
 
 ## Code Style Guidelines
 
@@ -502,23 +485,8 @@ Tables use TanStack Table with React Query:
 
 ## Error Handling & Monitoring
 
-### Sentry Integration
-
-Sentry is configured for both client and server:
-
-- Client config: `src/instrumentation-client.ts`
-- Server config: `src/instrumentation.ts`
-- Global error: `src/app/global-error.tsx`
-
-To disable Sentry in development:
-
-```env
-NEXT_PUBLIC_SENTRY_DISABLED="true"
-```
-
 ### Error Boundaries
 
-- `global-error.tsx` - Catches all errors, reports to Sentry
 - Parallel route `error.tsx` files for specific sections
 
 ---
@@ -557,7 +525,6 @@ Ensure these are set in your deployment platform:
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `CLERK_SECRET_KEY`
 - All `NEXT_PUBLIC_*` variables for client-side access
-- `SENTRY_*` variables if using error tracking
 
 ### Docker
 
@@ -572,7 +539,6 @@ Both use `output: 'standalone'` in `next.config.ts`. Pass `NEXT_PUBLIC_*` vars a
 
 - Output: `standalone` (optimized for Docker/self-hosting)
 - Images: Configured for `api.slingacademy.com`, `img.clerk.com`, `clerk.com`
-- Sentry source maps uploaded automatically in CI
 
 ---
 
@@ -586,11 +552,7 @@ node scripts/cleanup.js --interactive
 
 # Remove specific features
 node scripts/cleanup.js clerk           # Remove auth/org/billing
-node scripts/cleanup.js kanban          # Remove kanban board
-node scripts/cleanup.js chat            # Remove messaging UI
-node scripts/cleanup.js notifications   # Remove notification center
 node scripts/cleanup.js themes          # Keep one theme, remove rest
-node scripts/cleanup.js sentry          # Remove error tracking
 
 # Remove multiple at once
 node scripts/cleanup.js kanban chat notifications
@@ -659,10 +621,6 @@ export const Icons = {
 | Theme           | `sun`, `moon`, `brightness`, `laptop`, `palette`                              |
 | Text formatting | `bold`, `italic`, `underline`, `text`                                         |
 | Data / Charts   | `trendingUp`, `trendingDown`, `eyeOff`, `adjustments`                         |
-
-### Icon Showcase Page
-
-Browse all available icons at `/dashboard/elements/icons` — a searchable grid of every icon in the registry.
 
 ### Why This Pattern?
 
@@ -737,7 +695,6 @@ See "Theming System" section above or `docs/themes.md`.
 - [shadcn/ui](https://ui.shadcn.com/docs)
 - [Tailwind CSS v4](https://tailwindcss.com/docs)
 - [TanStack Table](https://tanstack.com/table/latest)
-- [Sentry Next.js](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
 
 ---
 
@@ -755,3 +712,13 @@ See "Theming System" section above or `docs/themes.md`.
 10. **Forms** - Use TanStack Form via `useAppForm` from `@/components/ui/tanstack-form`. Never use `useState` inside `AppField` render props — extract stateful logic into separate components.
 11. **Button loading** - Use `<Button isLoading={isPending}>` for loading states. Uses CSS Grid overlap trick for zero layout shift. When `isLoading` is not passed, button behaves as default shadcn. `SubmitButton` in forms handles this automatically via form `isSubmitting` state.
 12. **Data layer** - Always go through the service layer: `types.ts` → `service.ts` → `queries.ts`. Components import types from `types.ts`, functions from `service.ts`, query options from `queries.ts`. Never import from `@/constants/mock-api*` directly in components.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

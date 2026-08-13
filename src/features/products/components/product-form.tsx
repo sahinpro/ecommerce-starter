@@ -1,16 +1,46 @@
 'use client';
 
-import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
+import { useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
+import {
+  PRODUCT_BADGE_OPTIONS,
+  PRODUCT_STATUS_OPTIONS,
+  slugifyProductName
+} from '@/features/products/constants/product-options';
+import { productFormSchema, type ProductFormValues } from '@/features/products/schemas/product';
+
 import { createProductMutation, updateProductMutation } from '../api/mutations';
-import type { Product } from '../api/types';
-import { useMutation } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import * as z from 'zod';
-import { productSchema, type ProductFormValues } from '@/features/products/schemas/product';
-import { categoryOptions } from '@/features/products/constants/product-options';
+import { categoriesQueryOptions } from '../api/queries';
+import type { Product, ProductMutationPayload } from '../api/types';
+import { ProductNestedSections } from './product-nested-sections';
+
+function toMutationPayload(value: ProductFormValues): ProductMutationPayload {
+  return {
+    name: value.name.trim(),
+    slug: value.slug.trim() || slugifyProductName(value.name),
+    description: value.description.trim() || null,
+    category_id: value.category_id || null,
+    product_type: value.product_type.trim() || null,
+    badge: value.badge || null,
+    featured: value.featured,
+    status: value.status,
+    price: Number(value.price),
+    compare_at_price:
+      value.compare_at_price === '' || value.compare_at_price == null
+        ? null
+        : Number(value.compare_at_price),
+    composition: value.composition.trim() || null,
+    care: value.care.trim() || null,
+    size_fit: value.size_fit.trim() || null
+  };
+}
 
 export default function ProductForm({
   initialData,
@@ -21,49 +51,73 @@ export default function ProductForm({
 }) {
   const router = useRouter();
   const isEdit = !!initialData;
+  const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const slugTouchedRef = useRef(isEdit);
+
+  const categoryOptions = useMemo(
+    () => [
+      { label: 'No category', value: '' },
+      ...categories.map((category) => ({ label: category.name, value: category.id }))
+    ],
+    [categories]
+  );
+
+  const badgeOptions = useMemo(
+    () => PRODUCT_BADGE_OPTIONS.map((option) => ({ label: option.label, value: option.value })),
+    []
+  );
+
+  const statusOptions = useMemo(
+    () => PRODUCT_STATUS_OPTIONS.map((option) => ({ label: option.label, value: option.value })),
+    []
+  );
 
   const createMutation = useMutation({
     ...createProductMutation,
-    onSuccess: () => {
-      toast.success('Product created successfully');
-      router.push('/dashboard/product');
+    onSuccess: (product) => {
+      toast.success('Product created — add images, colors, and variants');
+      router.push(`/dashboard/product/${product.slug}`);
     },
-    onError: () => {
-      toast.error('Failed to create product');
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to create product');
     }
   });
 
   const updateMutation = useMutation({
     ...updateProductMutation,
-    onSuccess: () => {
-      toast.success('Product updated successfully');
-      router.push('/dashboard/product');
+    onSuccess: (product) => {
+      toast.success('Product updated');
+      if (product.slug && product.slug !== initialData?.slug) {
+        router.replace(`/dashboard/product/${product.slug}`);
+      }
     },
-    onError: () => {
-      toast.error('Failed to update product');
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to update product');
     }
   });
 
   const form = useAppForm({
     defaultValues: {
-      image: undefined,
       name: initialData?.name ?? '',
-      category: initialData?.category ?? '',
-      price: initialData?.price,
-      description: initialData?.description ?? ''
+      slug: initialData?.slug ?? '',
+      description: initialData?.description ?? '',
+      category_id: initialData?.category_id ?? '',
+      product_type: initialData?.product_type ?? '',
+      badge: initialData?.badge ?? '',
+      featured: initialData?.featured ?? false,
+      status: initialData?.status ?? 'draft',
+      price: initialData?.price ?? '',
+      compare_at_price: initialData?.compare_at_price ?? '',
+      composition: initialData?.composition ?? '',
+      care: initialData?.care ?? '',
+      size_fit: initialData?.size_fit ?? ''
     } as ProductFormValues,
     validators: {
-      onSubmit: productSchema
+      onSubmit: productFormSchema
     },
     onSubmit: ({ value }) => {
-      const payload = {
-        name: value.name,
-        category: value.category,
-        price: value.price!,
-        description: value.description
-      };
-
-      if (isEdit) {
+      const payload = toMutationPayload(value);
+      if (isEdit && initialData) {
         updateMutation.mutate({ id: initialData.id, values: payload });
       } else {
         createMutation.mutate(payload);
@@ -71,82 +125,148 @@ export default function ProductForm({
     }
   });
 
-  const { FormTextField, FormSelectField, FormTextareaField, FormFileUploadField } =
+  const { FormTextField, FormSelectField, FormTextareaField, FormSwitchField } =
     useFormFields<ProductFormValues>();
 
   return (
-    <Card className='mx-auto w-full'>
-      <CardHeader>
-        <CardTitle className='text-left text-2xl font-bold'>{pageTitle}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form.AppForm>
-          <form.Form className='space-y-8'>
-            <FormFileUploadField
-              name='image'
-              label='Product Image'
-              description='Upload a product image'
-              maxSize={5 * 1024 * 1024}
-              maxFiles={4}
-            />
+    <div className='mx-auto w-full space-y-6'>
+      <Card>
+        <CardHeader>
+          <CardTitle className='text-left text-2xl font-bold'>{pageTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form.AppForm>
+            <form.Form className='space-y-8'>
+              <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+                <FormTextField
+                  name='name'
+                  label='Name'
+                  required
+                  placeholder='Linen shirt'
+                  listeners={{
+                    onChange: ({ value }) => {
+                      if (slugTouchedRef.current) return;
+                      form.setFieldValue('slug', slugifyProductName(String(value ?? '')));
+                    }
+                  }}
+                  validators={{
+                    onBlur: z.string().trim().min(1, 'Name is required')
+                  }}
+                />
 
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-              <FormTextField
-                name='name'
-                label='Product Name'
-                required
-                placeholder='Enter product name'
-                validators={{
-                  onBlur: z.string().min(2, 'Product name must be at least 2 characters.')
-                }}
+                <FormTextField
+                  name='slug'
+                  label='URL slug'
+                  required
+                  description='Filled from the product name. Used in admin and storefront URLs.'
+                  placeholder='linen-shirt'
+                  listeners={{
+                    onChange: () => {
+                      slugTouchedRef.current = true;
+                    }
+                  }}
+                  validators={{
+                    onBlur: z
+                      .string()
+                      .trim()
+                      .min(1, 'Slug is required')
+                      .regex(
+                        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+                        'Use lowercase letters, numbers, and hyphens only'
+                      )
+                  }}
+                />
+
+                <FormSelectField
+                  name='category_id'
+                  label='Category'
+                  options={categoryOptions}
+                  placeholder='Select category'
+                />
+
+                <FormTextField name='product_type' label='Product type' placeholder='Shirts' />
+
+                <FormSelectField
+                  name='badge'
+                  label='Badge'
+                  options={badgeOptions}
+                  placeholder='None'
+                />
+
+                <FormSelectField
+                  name='status'
+                  label='Status'
+                  required
+                  options={statusOptions}
+                  placeholder='Select status'
+                />
+
+                <FormTextField
+                  name='price'
+                  label='Price'
+                  required
+                  type='number'
+                  min={0}
+                  step={0.01}
+                  placeholder='0.00'
+                  validators={{
+                    onBlur: z.number({ message: 'Price is required' }).nonnegative()
+                  }}
+                />
+
+                <FormTextField
+                  name='compare_at_price'
+                  label='Compare at price'
+                  type='number'
+                  min={0}
+                  step={0.01}
+                  placeholder='Optional'
+                />
+              </div>
+
+              <FormSwitchField name='featured' label='Featured product' />
+
+              <FormTextareaField
+                name='description'
+                label='Description'
+                placeholder='Product description'
+                rows={4}
               />
 
-              <FormSelectField
-                name='category'
-                label='Category'
-                required
-                options={categoryOptions}
-                placeholder='Select category'
-                validators={{
-                  onBlur: z.string().min(1, 'Please select a category')
-                }}
-              />
+              <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+                <FormTextareaField
+                  name='composition'
+                  label='Composition'
+                  placeholder='100% linen'
+                  rows={3}
+                />
+                <FormTextareaField name='care' label='Care' placeholder='Cold wash' rows={3} />
+                <FormTextareaField
+                  name='size_fit'
+                  label='Size & fit'
+                  placeholder='True to size'
+                  rows={3}
+                />
+              </div>
 
-              <FormTextField
-                name='price'
-                label='Price'
-                required
-                type='number'
-                min={0}
-                step={0.01}
-                placeholder='Enter price'
-                validators={{
-                  onBlur: z.number({ message: 'Price is required' })
-                }}
-              />
-            </div>
+              <div className='flex justify-end gap-2'>
+                <Button type='button' variant='outline' onClick={() => router.back()}>
+                  Back
+                </Button>
+                <form.SubmitButton>{isEdit ? 'Save product' : 'Create product'}</form.SubmitButton>
+              </div>
+            </form.Form>
+          </form.AppForm>
+        </CardContent>
+      </Card>
 
-            <FormTextareaField
-              name='description'
-              label='Description'
-              required
-              placeholder='Enter product description'
-              maxLength={500}
-              rows={4}
-              validators={{
-                onBlur: z.string().min(10, 'Description must be at least 10 characters.')
-              }}
-            />
+      {initialData ? <ProductNestedSections product={initialData} /> : null}
 
-            <div className='flex justify-end gap-2'>
-              <Button type='button' variant='outline' onClick={() => router.back()}>
-                Back
-              </Button>
-              <form.SubmitButton>{isEdit ? 'Update Product' : 'Add Product'}</form.SubmitButton>
-            </div>
-          </form.Form>
-        </form.AppForm>
-      </CardContent>
-    </Card>
+      {!initialData ? (
+        <p className='text-muted-foreground text-sm'>
+          After creating the product you can add images, colors, and variants.
+        </p>
+      ) : null}
+    </div>
   );
 }

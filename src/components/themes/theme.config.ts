@@ -1,52 +1,15 @@
 /**
- * Default theme that loads when no user preference is set
- * Change this value to set a different default theme
+ * Dashboard default theme (WhatsApp). Storefront uses Sukoon via StorefrontTheme
+ * and is intentionally omitted from the dashboard theme gallery.
  */
-export const DEFAULT_THEME = 'sukoon';
+export const DEFAULT_THEME = 'whatsapp';
+export const STOREFRONT_THEME = 'sukoon';
 
-export const THEMES = [
-  {
-    name: 'Sukoon',
-    value: 'sukoon'
-  },
-  {
-    name: 'Claude',
-    value: 'claude'
-  },
-  {
-    name: 'Neobrutualism',
-    value: 'neobrutualism'
-  },
-  {
-    name: 'Supabase',
-    value: 'supabase'
-  },
-  {
-    name: 'Vercel',
-    value: 'vercel'
-  },
-  {
-    name: 'Mono',
-    value: 'mono'
-  },
-  {
-    name: 'Notebook',
-    value: 'notebook'
-  },
-  {
-    name: 'Light Green',
-    value: 'light-green'
-  },
-  {
-    name: 'Zen',
-    value: 'zen'
-  },
-  {
-    name: 'Astro Vista',
-    value: 'astro-vista'
-  },
-  {
-    name: 'WhatsApp',
-    value: 'whatsapp'
-  }
-];
+/** All valid `data-theme` values for cookie / SSR validation. */
+export const VALID_THEMES = [DEFAULT_THEME, STOREFRONT_THEME] as const;
+
+export type ValidTheme = (typeof VALID_THEMES)[number];
+
+export function isValidTheme(value: string | undefined | null): value is ValidTheme {
+  return !!value && (VALID_THEMES as readonly string[]).includes(value);
+}

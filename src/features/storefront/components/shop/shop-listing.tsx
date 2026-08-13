@@ -5,16 +5,10 @@ import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { useMemo, useState } from 'react';
 
 import { Icons } from '@/components/icons';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
-import { productsQueryOptions } from '../../api/queries';
+import { filterOptionsQueryOptions, productsQueryOptions } from '../../api/queries';
 import { ProductCard } from '../product/product-card';
 import { FilterPanel } from './filter-panel';
 
@@ -55,6 +49,7 @@ export function ShopListing({ category, title }: ShopListingProps) {
   );
 
   const { data } = useSuspenseQuery(productsQueryOptions(filters));
+  const { data: filterOptions } = useSuspenseQuery(filterOptionsQueryOptions(category));
 
   function toggleValue(list: string[], value: string, setter: (v: string[]) => void) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -118,6 +113,7 @@ export function ShopListing({ category, title }: ShopListingProps) {
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
               <FilterPanel
+                options={filterOptions}
                 selectedSizes={pendingSizes}
                 selectedColors={pendingColors}
                 selectedTypes={pendingTypes}
@@ -139,16 +135,12 @@ export function ShopListing({ category, title }: ShopListingProps) {
         )}
       >
         {data.products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            catalogue={params.view === 'catalogue'}
-          />
+          <ProductCard key={product.id} product={product} catalogue={params.view === 'catalogue'} />
         ))}
       </div>
 
       {data.products.length === 0 ? (
-        <p className='text-muted-foreground py-20 text-center'>No products match your filters.</p>
+        <p className='text-muted-foreground py-20 text-center'>Nothing here yet.</p>
       ) : null}
     </div>
   );

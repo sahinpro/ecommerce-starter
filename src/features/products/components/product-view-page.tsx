@@ -1,29 +1,33 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
-import type { Product } from '../api/types';
 import { notFound } from 'next/navigation';
-import ProductForm from './product-form';
-import { productByIdOptions } from '../api/queries';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-type TProductViewPageProps = {
+import { productByIdOptions } from '../api/queries';
+import ProductForm from './product-form';
+
+type ProductViewPageProps = {
   productId: string;
 };
 
-export default function ProductViewPage({ productId }: TProductViewPageProps) {
+export default function ProductViewPage({ productId }: ProductViewPageProps) {
   if (productId === 'new') {
-    return <ProductForm initialData={null} pageTitle='Create New Product' />;
+    return <NewProductView />;
   }
 
-  return <EditProductView productId={Number(productId)} />;
+  return <EditProductView productId={productId} />;
 }
 
-function EditProductView({ productId }: { productId: number }) {
-  const { data } = useSuspenseQuery(productByIdOptions(productId));
+function NewProductView() {
+  return <ProductForm initialData={null} pageTitle='Create New Product' />;
+}
 
-  if (!data?.success || !data?.product) {
+function EditProductView({ productId }: { productId: string }) {
+  const { data: product } = useSuspenseQuery(productByIdOptions(productId));
+
+  if (!product) {
     notFound();
   }
 
-  return <ProductForm initialData={data.product as Product} pageTitle='Edit Product' />;
+  return <ProductForm initialData={product} pageTitle='Edit Product' />;
 }

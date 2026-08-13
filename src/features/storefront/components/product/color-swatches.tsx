@@ -7,6 +7,7 @@ type ColorSwatchesProps = {
   selectedId?: string;
   onSelect?: (color: ProductColor) => void;
   size?: 'sm' | 'md';
+  shape?: 'circle' | 'square';
   className?: string;
 };
 
@@ -15,14 +16,21 @@ export function ColorSwatches({
   selectedId,
   onSelect,
   size = 'sm',
+  shape = 'circle',
   className
 }: ColorSwatchesProps) {
-  const dotSize = size === 'sm' ? 'size-3' : 'size-5';
+  const dim = shape === 'square' ? 'size-3' : size === 'sm' ? 'size-3' : 'size-5';
 
   return (
-    <div className={cn('flex flex-wrap gap-2', className)}>
+    <div className={cn('flex flex-wrap gap-1', className)}>
       {colors.map((color) => {
         const isSelected = selectedId === color.id;
+        const swatchClass = cn(
+          dim,
+          shape === 'square' ? 'border border-black' : 'rounded-full border border-black/10',
+          isSelected && shape === 'circle' && 'ring-foreground ring-1 ring-offset-2',
+          onSelect && 'transition-transform hover:scale-110'
+        );
 
         if (onSelect) {
           return (
@@ -31,11 +39,7 @@ export function ColorSwatches({
               type='button'
               onClick={() => onSelect(color)}
               aria-label={color.name}
-              className={cn(
-                dotSize,
-                'rounded-full border transition-transform hover:scale-110',
-                isSelected ? 'ring-foreground ring-1 ring-offset-2' : 'border-black/10'
-              )}
+              className={swatchClass}
               style={{ backgroundColor: color.hex }}
             />
           );
@@ -44,7 +48,7 @@ export function ColorSwatches({
         return (
           <span
             key={color.id}
-            className={cn(dotSize, 'rounded-full border border-black/10')}
+            className={swatchClass}
             style={{ backgroundColor: color.hex }}
             title={color.name}
           />

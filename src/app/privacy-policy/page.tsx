@@ -29,37 +29,17 @@ export default function PrivacyPolicyPage() {
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Data Collection</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
-            Our application collects minimal data necessary for authentication purposes. When you
-            sign in using our authentication provider, we receive basic profile information such as
-            your email address and name. This data is used solely to identify you within the
-            application and provide personalized access to features.
+            The storefront is available to guests without creating an account. Dashboard
+            administrators who sign in provide an email address and related account details used
+            only to manage store operations.
           </p>
         </section>
 
         <section>
-          <h2 className='text-foreground mb-3 text-xl font-semibold'>Authentication by Clerk</h2>
+          <h2 className='text-foreground mb-3 text-xl font-semibold'>Admin Authentication</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
-            Our application uses{' '}
-            <a
-              href='https://clerk.com'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary font-medium hover:underline'
-            >
-              Clerk
-            </a>{' '}
-            to handle user authentication securely. All authentication processes, including sign-up,
-            sign-in, and password management, are managed by Clerk. For detailed information about
-            how Clerk processes and protects your data, please review their{' '}
-            <a
-              href='https://clerk.com/legal/privacy'
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-primary font-medium hover:underline'
-            >
-              Privacy Policy
-            </a>
-            .
+            Dashboard access is authenticated with Supabase Auth for authorized staff only. Store
+            customers shop as guests and do not require an authentication account.
           </p>
         </section>
 
@@ -91,11 +71,8 @@ export default function PrivacyPolicyPage() {
           <p className='text-muted-foreground text-base leading-relaxed'>
             If you have any questions, concerns, or requests regarding this Privacy Policy or our
             data practices, please feel free to contact us at{' '}
-            <a
-              href='mailto:contact@kiranism.dev'
-              className='text-primary font-medium hover:underline'
-            >
-              contact@kiranism.dev
+            <a href='mailto:hello@sukoon.com' className='text-primary font-medium hover:underline'>
+              hello@sukoon.com
             </a>
             .
           </p>

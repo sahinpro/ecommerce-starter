@@ -1,125 +1,152 @@
-import PageContainer from '@/components/layout/page-container';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardAction,
-  CardFooter
-} from '@/components/ui/card';
-import { Icons } from '@/components/icons';
-import React from 'react';
+import Link from 'next/link';
 
-export default function OverViewLayout({
-  sales,
-  pie_stats,
-  bar_stats,
-  area_stats
-}: {
-  sales: React.ReactNode;
-  pie_stats: React.ReactNode;
-  bar_stats: React.ReactNode;
-  area_stats: React.ReactNode;
-}) {
+import PageContainer from '@/components/layout/page-container';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LOW_STOCK_THRESHOLD } from '@/features/orders/constants';
+import { listOrders } from '@/features/orders/service';
+import { formatMoney } from '@/lib/format-money';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+async function getOverviewStats() {
+  const supabase = await createSupabaseServerClient();
+
+  const [ordersResult, productsResult, variantsResult] = await Promise.all([
+    listOrders({ page: 1, limit: 5 }).catch(() => ({ items: [], total_items: 0 })),
+    supabase.from('products').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+    supabase.from('product_variants').select('id, stock_quantity, sku')
+  ]);
+
+  const variants = (variantsResult.data ?? []) as {
+    id: string;
+    stock_quantity: number;
+    sku: string;
+  }[];
+
+  const lowStock = variants.filter(
+    (v) => v.stock_quantity > 0 && v.stock_quantity <= LOW_STOCK_THRESHOLD
+  );
+  const outOfStock = variants.filter((v) => v.stock_quantity <= 0);
+  const salesTotal = ordersResult.items.reduce((sum, order) => sum + order.total, 0);
+
+  return {
+    recentOrders: ordersResult.items,
+    orderCount: ordersResult.total_items,
+    productCount: productsResult.count ?? 0,
+    lowStock,
+    outOfStock,
+    salesTotal
+  };
+}
+
+export default async function OverViewLayout({ children }: { children: React.ReactNode }) {
+  const stats = await getOverviewStats();
+
+  const metrics = [
+    {
+      label: 'Recent sales',
+      value: formatMoney(stats.salesTotal),
+      hint: 'Sum of the latest listed orders (page sample).'
+    },
+    {
+      label: 'Orders',
+      value: String(stats.orderCount),
+      hint: 'All COD orders in the database.'
+    },
+    {
+      label: 'Products',
+      value: String(stats.productCount),
+      hint: 'Catalog products (not deleted).'
+    },
+    {
+      label: 'Out of stock SKUs',
+      value: String(stats.outOfStock.length),
+      hint: `${stats.lowStock.length} low-stock (≤ ${LOW_STOCK_THRESHOLD}).`
+    }
+  ] as const;
+
   return (
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-2'>
         <div className='flex items-center justify-between'>
-          <h2 className='text-2xl font-bold tracking-tight'>Hi, Welcome back 👋</h2>
+          <h2 className='text-2xl font-bold tracking-tight'>Dashboard</h2>
         </div>
 
         <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
-          <Card className='@container/card'>
+          {metrics.map((metric) => (
+            <Card key={metric.label} className='@container/card'>
+              <CardHeader>
+                <CardDescription>{metric.label}</CardDescription>
+                <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
+                  {metric.value}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-muted-foreground text-sm'>{metric.hint}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          <Card>
             <CardHeader>
-              <CardDescription>Total Revenue</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                $1,250.00
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <Icons.trendingUp />
-                  +12.5%
-                </Badge>
-              </CardAction>
+              <CardTitle>Recent orders</CardTitle>
+              <CardDescription>
+                <Link
+                  href='/dashboard/orders'
+                  className='cursor-pointer underline-offset-4 hover:underline'
+                >
+                  View all orders
+                </Link>
+              </CardDescription>
             </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                Trending up this month <Icons.trendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>Visitors for the last 6 months</div>
-            </CardFooter>
+            <CardContent>
+              {stats.recentOrders.length === 0 ? (
+                <p className='text-muted-foreground text-sm'>No orders yet.</p>
+              ) : (
+                <ul className='space-y-2 text-sm'>
+                  {stats.recentOrders.map((order) => (
+                    <li key={order.id} className='flex justify-between gap-3'>
+                      <Link
+                        href={`/dashboard/orders/${order.id}`}
+                        className='cursor-pointer font-medium underline-offset-4 hover:underline'
+                      >
+                        {order.order_number}
+                      </Link>
+                      <span>{formatMoney(order.total, order.currency)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
           </Card>
-          <Card className='@container/card'>
+          <Card>
             <CardHeader>
-              <CardDescription>New Customers</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                1,234
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <Icons.trendingDown />
-                  -20%
-                </Badge>
-              </CardAction>
+              <CardTitle>Inventory alerts</CardTitle>
+              <CardDescription>Low and out-of-stock variants</CardDescription>
             </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                Down 20% this period <Icons.trendingDown className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>Acquisition needs attention</div>
-            </CardFooter>
-          </Card>
-          <Card className='@container/card'>
-            <CardHeader>
-              <CardDescription>Active Accounts</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                45,678
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <Icons.trendingUp />
-                  +12.5%
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                Strong user retention <Icons.trendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>Engagement exceed targets</div>
-            </CardFooter>
-          </Card>
-          <Card className='@container/card'>
-            <CardHeader>
-              <CardDescription>Growth Rate</CardDescription>
-              <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-                4.5%
-              </CardTitle>
-              <CardAction>
-                <Badge variant='outline'>
-                  <Icons.trendingUp />
-                  +4.5%
-                </Badge>
-              </CardAction>
-            </CardHeader>
-            <CardFooter className='flex-col items-start gap-1.5 text-sm'>
-              <div className='line-clamp-1 flex gap-2 font-medium'>
-                Steady performance increase <Icons.trendingUp className='size-4' />
-              </div>
-              <div className='text-muted-foreground'>Meets growth projections</div>
-            </CardFooter>
+            <CardContent>
+              {stats.lowStock.length === 0 && stats.outOfStock.length === 0 ? (
+                <p className='text-muted-foreground text-sm'>No inventory alerts.</p>
+              ) : (
+                <ul className='space-y-1 text-sm'>
+                  {stats.outOfStock.slice(0, 5).map((v) => (
+                    <li key={v.id} className='text-destructive'>
+                      {v.sku} · Out of stock
+                    </li>
+                  ))}
+                  {stats.lowStock.slice(0, 5).map((v) => (
+                    <li key={v.id} className='text-amber-600'>
+                      {v.sku} · {v.stock_quantity} left
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
           </Card>
         </div>
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7'>
-          <div className='col-span-4'>{bar_stats}</div>
-          <div className='col-span-4 md:col-span-3'>
-            {/* sales arallel routes */}
-            {sales}
-          </div>
-          <div className='col-span-4'>{area_stats}</div>
-          <div className='col-span-4 min-h-0 md:col-span-3'>{pie_stats}</div>
-        </div>
+
+        {children}
       </div>
     </PageContainer>
   );
