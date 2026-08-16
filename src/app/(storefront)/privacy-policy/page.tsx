@@ -1,7 +1,7 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
+  title: 'Privacy Policy | Sukoon',
   robots: {
     index: false
   }
@@ -9,12 +9,10 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className='min-h-screen px-4 py-12 sm:px-6 lg:px-8'>
+    <div className='px-4 py-20 sm:px-6 lg:px-10'>
       <div className='mx-auto max-w-3xl space-y-8'>
-        {/* Main Heading */}
         <h1 className='text-foreground text-3xl font-bold'>Privacy Policy</h1>
 
-        {/* Introduction */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Introduction</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -25,7 +23,6 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* Data Collection */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Data Collection</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -43,7 +40,6 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* No data misuse */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>No Data Misuse</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -54,7 +50,6 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* Demo purpose */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Demo Application</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -65,7 +60,6 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* Contact */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Contact Us</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -78,7 +72,6 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
-        {/* Last Updated */}
         <div className='border-border border-t pt-4'>
           <p className='text-muted-foreground text-sm'>Last updated: February 2026</p>
         </div>

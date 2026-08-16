@@ -169,37 +169,46 @@ export function CheckoutView() {
           <h2 className='text-sm tracking-[0.15em] uppercase'>Shipping</h2>
           <p className='text-sm font-medium'>Shipping Area *</p>
           <div className='space-y-3'>
-            {SHIPPING_AREAS.map((area) => (
-              <label key={area.value} className='flex cursor-pointer items-start gap-3'>
-                <input
-                  type='radio'
-                  name='shipping_area'
-                  required
-                  checked={shippingArea === area.value}
-                  onChange={() => setShippingArea(area.value)}
-                  className='mt-1 cursor-pointer'
-                />
-                <span>
-                  <span className='font-medium'>
+            {SHIPPING_AREAS.map((area) => {
+              const inputId = `shipping-area-${area.value}`;
+              return (
+                <div key={area.value} className='flex items-start gap-3'>
+                  <input
+                    id={inputId}
+                    type='radio'
+                    name='shipping_area'
+                    required
+                    checked={shippingArea === area.value}
+                    onChange={() => setShippingArea(area.value)}
+                    className='mt-1 cursor-pointer'
+                  />
+                  <label htmlFor={inputId} className='cursor-pointer font-medium'>
                     {area.label} — {formatMoney(area.fee)}
-                  </span>
-                </span>
-              </label>
-            ))}
+                  </label>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         <section className='border-border space-y-3 border p-4'>
           <h2 className='text-sm tracking-[0.15em] uppercase'>Payment</h2>
-          <label className='flex cursor-pointer items-start gap-3'>
-            <input type='radio' name='payment' checked readOnly className='mt-1 cursor-pointer' />
-            <span>
+          <div className='flex items-start gap-3'>
+            <input
+              id='payment-cod'
+              type='radio'
+              name='payment'
+              checked
+              readOnly
+              className='mt-1 cursor-pointer'
+            />
+            <label htmlFor='payment-cod' className='cursor-pointer'>
               <span className='font-medium'>Cash on Delivery</span>
               <span className='text-muted-foreground mt-1 block text-sm'>
                 Pay in cash when your order is delivered.
               </span>
-            </span>
-          </label>
+            </label>
+          </div>
         </section>
 
         {error ? <p className='text-destructive text-sm'>{error}</p> : null}

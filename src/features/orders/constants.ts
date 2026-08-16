@@ -52,7 +52,7 @@ export function shippingFeeForArea(area: ShippingArea): number {
 export function shippingAreaLabel(area: string | null | undefined): string {
   const match = SHIPPING_AREAS.find((item) => item.value === area);
   if (!match) return area || '—';
-  return `${match.label} — ৳${match.fee}`;
+  return `${match.label} — BDT ${match.fee}`;
 }
 
 export function stockStatusLabel(

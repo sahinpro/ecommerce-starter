@@ -9,7 +9,7 @@ import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-import type { Product, ProductColor } from '../../api/types';
+import type { Product, ProductColor, ProductImage } from '../../api/types';
 import { useCartStore } from '../../utils/cart-store';
 import { formatPrice } from '../../utils/format-price';
 import { useWishlistStore } from '../../utils/wishlist-store';
@@ -55,6 +55,58 @@ function DetailTabs({ product }: { product: Product }) {
   );
 }
 
+function ProductGallery({ images, productName }: { images: ProductImage[]; productName: string }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const current = images[activeIndex] ?? images[0];
+
+  if (!current) {
+    return <div className='bg-muted aspect-960/1087 w-full' />;
+  }
+
+  return (
+    <div className='flex flex-col gap-3 px-4 lg:px-0'>
+      <div className='bg-muted relative aspect-960/1087 w-full'>
+        <Image
+          src={current.url}
+          alt={current.alt ?? productName}
+          fill
+          priority
+          className='object-cover'
+          sizes='(max-width: 1024px) 100vw, 50vw'
+        />
+      </div>
+      {images.length > 1 ? (
+        <div className='grid grid-cols-4 gap-2'>
+          {images.map((image, index) => {
+            const isActive = index === activeIndex;
+            return (
+              <button
+                key={image.id}
+                type='button'
+                onClick={() => setActiveIndex(index)}
+                aria-label={`View image ${index + 1} of ${images.length}`}
+                aria-pressed={isActive}
+                className={cn(
+                  'bg-muted relative aspect-square overflow-hidden',
+                  isActive ? 'ring-1 ring-sukoon-black' : 'opacity-70 hover:opacity-100'
+                )}
+              >
+                <Image
+                  src={image.url}
+                  alt={image.alt ?? `${productName} ${index + 1}`}
+                  fill
+                  className='object-cover'
+                  sizes='120px'
+                />
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function ProductDetailView({ product, related }: ProductDetailViewProps) {
   const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
@@ -71,7 +123,11 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
       });
       return;
     }
-    const result = addItem({ product, size: selectedSize, color: selectedColor });
+    const result = addItem({
+      product,
+      size: selectedSize,
+      color: selectedColor
+    });
     if (!result.ok) {
       const isStock = /out of stock|only \d+ items are available/i.test(result.error);
       if (isStock) {
@@ -89,22 +145,9 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
   return (
     <div>
       <div className='grid lg:grid-cols-2'>
-        <div className='space-y-0'>
-          {product.images.map((image, index) => (
-            <div key={image.id} className='bg-muted relative aspect-[960/1087] w-full'>
-              <Image
-                src={image.url}
-                alt={image.alt ?? product.name}
-                fill
-                priority={index === 0}
-                className='object-cover'
-                sizes='(max-width: 1024px) 100vw, 50vw'
-              />
-            </div>
-          ))}
-        </div>
+        <ProductGallery key={product.id} images={product.images} productName={product.name} />
 
-        <div className='sticky top-[160px] h-fit px-10 py-16 lg:max-w-md'>
+        <div className='sticky top-40 h-fit px-4 py-16 lg:max-w-md'>
           <div className='flex items-start justify-between gap-4'>
             <h1 className='font-serif text-3xl leading-tight'>{product.name}</h1>
             <button

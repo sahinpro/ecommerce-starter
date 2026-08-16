@@ -1,34 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-
+import { Icons } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
 import { STORE_ANNOUNCEMENT } from '../../constants/mock-data';
-import { StorefrontIcon } from '../brand/storefront-icon';
 
-export function AnnouncementBar() {
-  const [visible, setVisible] = useState(true);
+type AnnouncementBarProps = {
+  visible?: boolean;
+  onDismiss?: () => void;
+};
 
+export function AnnouncementBar({ visible = true, onDismiss }: AnnouncementBarProps) {
   if (!visible) return null;
 
   return (
     <div
       className={cn(
-        'bg-sukoon-dark relative flex h-10 w-full shrink-0 items-center justify-center overflow-hidden px-10 text-white'
+        'relative flex h-10 w-full shrink-0 items-center justify-center overflow-hidden px-4',
+        'bg-[#f4f4f2] text-sukoon-black/70 md:px-10'
       )}
       data-node-id='1:216'
     >
-      <p className='text-center text-[13.8px] leading-[12px] tracking-[0.28px]'>
+      <p className='px-8 text-center text-[13px] leading-3 tracking-[0.28px] md:px-0 md:text-[13.8px]'>
         {STORE_ANNOUNCEMENT}
       </p>
       <button
         type='button'
-        onClick={() => setVisible(false)}
-        className='absolute top-[20%] right-5 bottom-[20%] flex w-6 items-center justify-center opacity-90 transition-opacity hover:opacity-100'
+        onClick={() => onDismiss?.()}
+        className='absolute top-[20%] right-4 bottom-[20%] flex w-6 items-center justify-center opacity-90 transition-opacity hover:opacity-100 md:right-5'
         aria-label='Dismiss announcement'
       >
-        <StorefrontIcon name='close' className='size-[13.5px]' />
+        <Icons.close className='size-[13.5px]' />
       </button>
     </div>
   );

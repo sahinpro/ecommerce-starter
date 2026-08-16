@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service',
+  title: 'Terms of Service | Sukoon',
   robots: {
     index: false
   }
@@ -9,9 +9,8 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
   return (
-    <div className='min-h-screen px-4 py-12 sm:px-6 lg:px-8'>
+    <div className='px-4 py-20 sm:px-6 lg:px-10'>
       <div className='mx-auto max-w-3xl space-y-8'>
-        {/* Main Heading */}
         <div className='text-center'>
           <h1 className='text-foreground text-3xl font-bold'>Terms of Service</h1>
           <p className='text-muted-foreground mt-2 text-sm'>
@@ -24,7 +23,6 @@ export default function TermsOfServicePage() {
           </p>
         </div>
 
-        {/* Introduction */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Introduction</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -34,7 +32,6 @@ export default function TermsOfServicePage() {
           </p>
         </section>
 
-        {/* Demo Purpose */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Demo Purpose</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -45,7 +42,6 @@ export default function TermsOfServicePage() {
           </p>
         </section>
 
-        {/* Open Source */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Open Source</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -56,7 +52,6 @@ export default function TermsOfServicePage() {
           </p>
         </section>
 
-        {/* No Warranty */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>No Warranty</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -68,7 +63,6 @@ export default function TermsOfServicePage() {
           </p>
         </section>
 
-        {/* Data Usage */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Data Usage</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -79,7 +73,6 @@ export default function TermsOfServicePage() {
           </p>
         </section>
 
-        {/* Changes */}
         <section>
           <h2 className='text-foreground mb-3 text-xl font-semibold'>Changes to These Terms</h2>
           <p className='text-muted-foreground text-base leading-relaxed'>
@@ -90,7 +83,6 @@ export default function TermsOfServicePage() {
           </p>
         </section>
 
-        {/* Contact */}
         <section className='border-border border-t pt-4'>
           <p className='text-muted-foreground text-center text-sm'>
             If you have any questions about these Terms of Service, please refer to the project

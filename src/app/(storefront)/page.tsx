@@ -12,7 +12,7 @@ import { getQueryClient } from '@/lib/query-client';
 
 export const metadata = {
   title: 'Sukoon | Premium Cloth Brand',
-  description: '#1 premium cloth brand. Founded in Bangladesh. Loved Worldwide.'
+  description: 'Premium cloth from Dhaka. Crafted in Bangladesh. Made for here.'
 };
 
 export default function HomePage() {

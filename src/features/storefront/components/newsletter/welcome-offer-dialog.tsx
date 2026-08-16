@@ -5,12 +5,7 @@ import { useEffect, useState } from 'react';
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function WelcomeOfferDialog() {
   const [open, setOpen] = useState(false);
@@ -22,7 +17,7 @@ export function WelcomeOfferDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className='max-w-[450px] rounded-none border-black/10 p-8'>
+      <DialogContent className='max-w-112.5 rounded-none border-black/10 p-8'>
         <button
           type='button'
           onClick={() => setOpen(false)}
@@ -41,15 +36,14 @@ export function WelcomeOfferDialog() {
         </DialogHeader>
 
         <p className='text-muted-foreground mt-6 text-center text-sm leading-relaxed'>
-          Join our community and be among the first to discover new arrivals,
-          styling guidance, and the care knowledge that makes every piece last
-          a lifetime.
+          Join our community and be among the first to discover new arrivals, styling guidance, and
+          the care knowledge that makes every piece last a lifetime.
         </p>
 
         <form className='mt-6 space-y-3' onSubmit={(e) => e.preventDefault()}>
           <Input placeholder='Email Address*' className='h-12 rounded-none' />
           <Input placeholder='First Name*' className='h-12 rounded-none' />
-          <Button type='submit' className='h-[54px] w-full rounded-none uppercase'>
+          <Button type='submit' className='h-13.5 w-full rounded-none uppercase'>
             Claim offer
           </Button>
         </form>

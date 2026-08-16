@@ -54,7 +54,7 @@ export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<
         <DataTableColumnHeader column={column} title='Name' />
       ),
       cell: ({ row }) => (
-        <div className='max-w-[220px]'>
+        <div className='max-w-55'>
           <Link
             href={`/dashboard/product/${row.original.slug}`}
             className='truncate font-medium hover:underline'

@@ -11,18 +11,25 @@ export const metadata = {
 };
 
 type ShopPageProps = {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; q?: string }>;
 };
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const { category } = await searchParams;
+  const { category, q } = await searchParams;
+  const search = q?.trim() || undefined;
   const queryClient = getQueryClient();
   void queryClient.prefetchQuery(
-    productsQueryOptions({ category: category ?? undefined, limit: 24 })
+    productsQueryOptions({
+      category: category ?? undefined,
+      search,
+      limit: 24
+    })
   );
 
   const known = FIGMA_PRIMARY_CATEGORIES.find((item) => item.slug === category);
-  const title = known?.name ?? (category ? category.replace(/-/g, ' ') : 'Shop All');
+  const title = search
+    ? `Results for “${search}”`
+    : (known?.name ?? (category ? category.replace(/-/g, ' ') : 'Shop All'));
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

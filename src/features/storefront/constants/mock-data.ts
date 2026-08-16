@@ -8,7 +8,7 @@ import type { Benefit, CollectionTile, Story } from '../api/types';
  * Replace in a dedicated content phase — do not treat as client-final messaging.
  */
 
-export const STORE_ANNOUNCEMENT = 'Founded in Bangladesh. Loved Worldwide.';
+export const STORE_ANNOUNCEMENT = 'Crafted in Bangladesh. Made for here.';
 
 export const collectionTiles: CollectionTile[] = [
   {
@@ -37,12 +37,21 @@ export const collectionTiles: CollectionTile[] = [
 export const stories: Story[] = [
   {
     id: 'story-1',
-    slug: 'from-bangladesh-with-care',
-    title: 'From Bangladesh, With Care',
+    slug: 'the-journal',
+    title: 'The Journal',
     excerpt:
-      'Every piece begins with thoughtful craft—soft fibres, patient hands, and a slower way of dressing.',
+      'Discover the world of Sukoon—where stories of craftsmanship, styling inspiration, and timeless luxury unfold.',
     image_url: '/sukoon/home/journal.png',
-    link_text: 'Read More'
+    link_text: 'Explore our Stories'
+  },
+  {
+    id: 'story-2',
+    slug: 'india-in-layers',
+    title: 'India, In Layers That Last',
+    excerpt:
+      'On a mindful journey through Rajasthan, Zeenat packed lightly, dressed intentionally, and wore the kind of pieces that carry meaning.',
+    image_url: '/sukoon/home/india-layers.png',
+    link_text: 'Read the Story'
   }
 ];
 

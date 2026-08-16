@@ -25,6 +25,7 @@ export function ShopListing({ category, title }: ShopListingProps) {
 
   const [params, setParams] = useQueryStates(
     {
+      q: parseAsString.withDefault(''),
       view: parseAsStringLiteral(['grid', 'catalogue'] as const).withDefault('grid'),
       sort: parseAsStringLiteral(['newest', 'price_asc', 'price_desc'] as const).withDefault(
         'newest'
@@ -36,16 +37,19 @@ export function ShopListing({ category, title }: ShopListingProps) {
     { shallow: true }
   );
 
+  const search = params.q.trim();
+
   const filters = useMemo(
     () => ({
       category: category ?? undefined,
+      search: search || undefined,
       sort: params.sort,
       sizes: params.sizes ? params.sizes.split(',').filter(Boolean) : undefined,
       colors: params.colors ? params.colors.split(',').filter(Boolean) : undefined,
       product_types: params.types ? params.types.split(',').filter(Boolean) : undefined,
       limit: 24
     }),
-    [category, params]
+    [category, params, search]
   );
 
   const { data } = useSuspenseQuery(productsQueryOptions(filters));
@@ -79,10 +83,12 @@ export function ShopListing({ category, title }: ShopListingProps) {
   }
 
   return (
-    <div className='px-10 py-8'>
+    <div className='px-6 py-8 md:px-6'>
       <div className='mb-8 flex flex-wrap items-center justify-between gap-4'>
-        <h1 className='font-serif text-2xl capitalize'>{title}</h1>
-        <div className='flex items-center gap-6 text-[13px] tracking-wide uppercase'>
+        <h1 className={cn('font-serif text-2xl', !search && 'capitalize')}>
+          {search ? `Results for “${search}”` : title}
+        </h1>
+        <div className='flex items-center justify-between gap-6 text-[13px] tracking-wide uppercase'>
           <button
             type='button'
             onClick={() => void setParams({ view: 'grid' })}
@@ -108,7 +114,7 @@ export function ShopListing({ category, title }: ShopListingProps) {
               Filter
               <Icons.adjustments className='size-4' />
             </SheetTrigger>
-            <SheetContent side='right' className='w-full max-w-[454px] rounded-none p-0'>
+            <SheetContent side='right' className='w-full max-w-113.5 rounded-none p-0'>
               <SheetHeader className='sr-only'>
                 <SheetTitle>Filters</SheetTitle>
               </SheetHeader>
@@ -140,7 +146,9 @@ export function ShopListing({ category, title }: ShopListingProps) {
       </div>
 
       {data.products.length === 0 ? (
-        <p className='text-muted-foreground py-20 text-center'>Nothing here yet.</p>
+        <p className='text-muted-foreground py-20 text-center'>
+          {search ? 'No products match your search.' : 'Nothing here yet.'}
+        </p>
       ) : null}
     </div>
   );

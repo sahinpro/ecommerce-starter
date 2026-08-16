@@ -9,7 +9,7 @@ type StorefrontShellProps = {
 
 export function StorefrontShell({ children }: StorefrontShellProps) {
   return (
-    <div className='bg-background text-foreground min-h-screen font-sans'>
+    <div className='bg-background text-foreground relative min-h-screen font-sans'>
       <StorefrontTheme />
       <StorefrontHeader />
       <main>{children}</main>

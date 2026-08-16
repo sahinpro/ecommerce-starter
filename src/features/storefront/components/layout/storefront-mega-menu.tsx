@@ -1,13 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 
 import { Icons } from '@/components/icons';
 import { getCollectionBlurb } from '@/features/catalog/figma-taxonomy';
 import { getCategoryNavChildren } from '@/features/catalog/service';
 import type { NavChildLink, NavPrimaryItem } from '@/features/catalog/types';
 import { cn } from '@/lib/utils';
+
+import { StorefrontIcon } from '../brand/storefront-icon';
+import { SukoonLogo } from '../brand/sukoon-logo';
+
+const FADE_MS = 300;
+const SLIDE_MS = 300;
 
 type StorefrontMegaMenuProps = {
   open: boolean;
@@ -17,6 +23,8 @@ type StorefrontMegaMenuProps = {
   onPointerEnter: () => void;
   onPointerLeave: () => void;
   primaryNav: NavPrimaryItem[];
+  onSearch?: () => void;
+  cartCount?: number;
 };
 
 export function StorefrontMegaMenu({
@@ -26,17 +34,22 @@ export function StorefrontMegaMenu({
   onClose,
   onPointerEnter,
   onPointerLeave,
-  primaryNav
+  primaryNav,
+  onSearch,
+  cartCount = 0
 }: StorefrontMegaMenuProps) {
   const [children, setChildren] = useState<NavChildLink[]>([]);
   const [mobileStack, setMobileStack] = useState<'root' | 'children'>('root');
   const [loadingChildren, setLoadingChildren] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setMobileStack('root');
-      return;
-    }
+    if (open) return;
+    const resetTimer = window.setTimeout(() => setMobileStack('root'), FADE_MS);
+    return () => window.clearTimeout(resetTimer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -46,8 +59,14 @@ export function StorefrontMegaMenu({
   }, [open, onClose]);
 
   useEffect(() => {
-    if (!open || !activeNav?.categorySlug) {
+    if (!open || !activeNav) {
       setChildren([]);
+      return;
+    }
+
+    if (!activeNav.categorySlug) {
+      setChildren([{ label: activeNav.label, href: activeNav.href }]);
+      setLoadingChildren(false);
       return;
     }
 
@@ -71,12 +90,16 @@ export function StorefrontMegaMenu({
     };
   }, [activeNav, open]);
 
+  function openSubmenu(item: NavPrimaryItem, event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    onActiveNavChange(item);
+    setMobileStack('children');
+  }
+
   return (
     <div
-      className={cn(
-        'fixed inset-0 z-50 transition-[opacity,visibility] duration-300 ease-out',
-        open ? 'visible opacity-100' : 'invisible pointer-events-none opacity-0'
-      )}
+      className='pointer-events-none fixed inset-0 z-60'
       role='dialog'
       aria-modal={open}
       aria-hidden={!open}
@@ -86,8 +109,8 @@ export function StorefrontMegaMenu({
         type='button'
         tabIndex={open ? 0 : -1}
         className={cn(
-          'absolute inset-0 cursor-pointer bg-black/40 transition-opacity duration-300 ease-out',
-          open ? 'opacity-100' : 'opacity-0'
+          'absolute inset-0 hidden cursor-pointer bg-white/60 transition-opacity duration-350 ease-out md:block',
+          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
         aria-label='Close menu'
         onClick={onClose}
@@ -95,185 +118,187 @@ export function StorefrontMegaMenu({
 
       <div
         className={cn(
-          'bg-sukoon-ivory absolute inset-y-0 left-0 flex w-full max-w-[min(720px,42vw)] min-w-75',
-          'transition-[opacity,transform,visibility] duration-300 ease-out will-change-transform',
-          open
-            ? 'visible translate-y-0 opacity-100'
-            : 'invisible pointer-events-none -translate-y-1 opacity-0'
+          'absolute inset-y-0 left-0 hidden w-full max-w-[min(520px,38vw)] min-w-75 bg-white md:flex',
+          'transition-opacity duration-350 ease-out',
+          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
         onMouseEnter={onPointerEnter}
         onMouseLeave={onPointerLeave}
       >
-        {/* Desktop: match header spacing (announcement h-10 + top-8 + gap-3 + 13px type) */}
-        <div className='hidden h-full w-full md:grid md:grid-cols-[minmax(220px,280px)_1fr]'>
+        <div className='grid h-full w-full md:grid-cols-[minmax(180px,220px)_1fr]'>
           <div className='flex flex-col' data-menu-level={1}>
             <div className='h-10 shrink-0' aria-hidden />
-            <div className='px-10 pt-8'>
-              <div className='flex flex-col gap-3'>
-                <button
-                  type='button'
-                  onClick={onClose}
-                  className='text-sukoon-black/70 flex h-4 w-fit cursor-pointer items-center text-[13px] tracking-[0.26px] transition-opacity hover:opacity-70'
-                >
-                  Close
-                </button>
-                <nav
-                  aria-label='Primary categories'
-                  className='flex flex-col gap-3 text-[13px] leading-3.25 tracking-[0.26px]'
-                >
-                  {primaryNav.map((item) => {
-                    const isActive = activeNav?.label === item.label;
-                    return (
-                      <div key={item.label} className='relative'>
-                        {isActive ? (
-                          <span className='bg-sukoon-black absolute top-1/2 -left-3 size-1.5 -translate-y-1/2' />
-                        ) : null}
-                        {item.categorySlug ? (
-                          <Link
-                            href={item.href}
-                            data-menu-trigger={item.categorySlug}
-                            onMouseEnter={() => onActiveNavChange(item)}
-                            onFocus={() => onActiveNavChange(item)}
-                            onClick={onClose}
-                            className={cn(
-                              'nav-link block w-fit text-left transition-opacity hover:opacity-70',
-                              isActive ? 'text-sukoon-black' : 'text-sukoon-black/55'
-                            )}
-                          >
-                            {item.label}
-                          </Link>
-                        ) : (
-                          <Link
-                            href={item.href}
-                            onClick={onClose}
-                            onMouseEnter={() => onActiveNavChange(item)}
-                            className={cn(
-                              'nav-link block w-fit transition-opacity hover:opacity-70',
-                              isActive ? 'text-sukoon-black' : 'text-sukoon-black/55'
-                            )}
-                          >
-                            {item.label}
-                          </Link>
+            <div className='px-10 pt-7'>
+              <nav
+                aria-label='Primary categories'
+                className='flex flex-col gap-3 text-[13px] leading-3.25 tracking-[0.26px]'
+              >
+                {primaryNav.map((item) => {
+                  const isActive = activeNav?.label === item.label;
+                  return (
+                    <div key={item.label} className='relative'>
+                      {isActive ? (
+                        <span className='bg-sukoon-black absolute top-1/2 -left-3 size-1.5 -translate-y-1/2' />
+                      ) : null}
+                      <Link
+                        href={item.href}
+                        data-menu-trigger={item.categorySlug}
+                        onMouseEnter={() => onActiveNavChange(item)}
+                        onFocus={() => onActiveNavChange(item)}
+                        onClick={onClose}
+                        className={cn(
+                          'nav-link block w-fit text-left transition-opacity hover:opacity-70',
+                          isActive ? 'text-sukoon-black' : 'text-sukoon-black/55'
                         )}
-                      </div>
-                    );
-                  })}
-                </nav>
-              </div>
+                      >
+                        {item.label}
+                      </Link>
+                    </div>
+                  );
+                })}
+              </nav>
             </div>
           </div>
 
           <div className='relative' data-menu-level={2}>
             <div className='h-10 shrink-0' aria-hidden />
-            <div className='relative px-10 pt-8'>
-              <button
-                type='button'
-                onClick={onClose}
-                className='text-sukoon-black absolute top-8 right-8'
-                aria-label='Close'
-              >
-                <Icons.close className='size-4' />
-              </button>
-
-              {/* Align secondary links with primary list (skip Close row + gap-3) */}
-              <div className='pt-7'>
-                {activeNav?.categorySlug ? (
-                  <div className='flex flex-col gap-5'>
-                    <ul className='flex flex-col gap-3 text-[13px] leading-3.25 tracking-[0.26px]'>
-                      {loadingChildren ? (
-                        <li className='text-muted-foreground'>Loading…</li>
-                      ) : (
-                        children.map((child) => (
-                          <li key={child.href + child.label}>
-                            <Link
-                              href={child.href}
-                              onClick={onClose}
-                              className='text-sukoon-black/75 hover:text-sukoon-black cursor-pointer transition-opacity hover:opacity-70'
-                            >
-                              {child.label}
-                            </Link>
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                    {getCollectionBlurb(activeNav.categorySlug) ? (
-                      <p className='text-sukoon-black/55 max-w-60 text-[12px] leading-relaxed tracking-[0.02em]'>
-                        {getCollectionBlurb(activeNav.categorySlug)}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className='text-sukoon-black/65 max-w-60 text-[13px] leading-relaxed tracking-[0.26px]'>
-                    Discover Sukoon — premium cloth founded in Bangladesh, loved worldwide.
-                  </p>
-                )}
-              </div>
+            <div className='px-10 pt-7'>
+              {activeNav?.categorySlug ? (
+                <div className='flex flex-col gap-5'>
+                  <ul className='flex flex-col gap-3 text-[12px] leading-3.25 tracking-[0.26px]'>
+                    {loadingChildren ? (
+                      <li className='text-muted-foreground'>Loading…</li>
+                    ) : (
+                      children.map((child) => (
+                        <li key={child.href + child.label}>
+                          <Link
+                            href={child.href}
+                            onClick={onClose}
+                            className='text-sukoon-black/75 hover:text-sukoon-black cursor-pointer transition-opacity hover:opacity-70'
+                          >
+                            {child.label}
+                          </Link>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                  {getCollectionBlurb(activeNav.categorySlug) ? (
+                    <p className='text-sukoon-black/55 max-w-60 text-[12px] leading-relaxed tracking-[0.02em]'>
+                      {getCollectionBlurb(activeNav.categorySlug)}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className='text-sukoon-black/65 max-w-60 text-[13px] leading-relaxed tracking-[0.26px]'>
+                  Discover Sukoon — premium cloth from Dhaka, crafted in Bangladesh.
+                </p>
+              )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Mobile: stacked with back */}
-        <div className='flex h-full w-full flex-col md:hidden'>
-          <div className='flex items-center justify-between border-b px-6 py-4'>
-            {mobileStack === 'children' ? (
+      {/* Mobile: full-screen white panel */}
+      <div
+        className={cn(
+          'absolute inset-0 flex flex-col bg-white text-sukoon-black md:hidden',
+          'transition-opacity duration-300 ease-out',
+          open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        )}
+      >
+        <div className='grid h-14 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-black/10 px-4'>
+          <button
+            type='button'
+            onClick={onClose}
+            className='justify-self-start text-[14px] tracking-[0.04em] underline decoration-1 underline-offset-1.25'
+          >
+            Close
+          </button>
+          <SukoonLogo
+            variant='header'
+            tone='black'
+            className='justify-self-center'
+            href='/'
+            onClick={onClose}
+          />
+          <div className='flex items-center justify-self-end gap-3.5'>
+            <button
+              type='button'
+              aria-label='Search'
+              className='cursor-pointer'
+              onClick={() => onSearch?.()}
+            >
+              <StorefrontIcon name='search' tone='dark' className='h-[14.11px] w-4' />
+            </button>
+            <Link
+              href='/cart'
+              className='relative cursor-pointer'
+              aria-label='Shopping bag'
+              onClick={onClose}
+            >
+              <StorefrontIcon name='bag' tone='dark' className='size-4.5' />
+              {cartCount > 0 ? (
+                <span className='bg-sukoon-black absolute -top-2 -right-2 flex size-4 items-center justify-center text-[10px] text-white'>
+                  {cartCount}
+                </span>
+              ) : null}
+            </Link>
+          </div>
+        </div>
+
+        <div className='relative min-h-0 flex-1 overflow-hidden'>
+          <div
+            className={cn(
+              'flex h-full w-[200%] ease-out',
+              mobileStack === 'children' ? '-translate-x-1/2' : 'translate-x-0'
+            )}
+            style={{ transition: `transform ${SLIDE_MS}ms ease-out` }}
+          >
+            <nav
+              className='flex h-full w-1/2 flex-col gap-4 overflow-y-auto px-6 pt-10 pb-12'
+              aria-label='Primary categories'
+            >
+              {primaryNav.map((item) => (
+                <button
+                  key={item.label}
+                  type='button'
+                  className='flex w-full items-center justify-between text-left text-[17px] tracking-[0.02em]'
+                  onClick={(event) => openSubmenu(item, event)}
+                >
+                  <span>{item.label}</span>
+                  <Icons.chevronRight className='text-sukoon-black/35 size-5 stroke-[1.25]' />
+                </button>
+              ))}
+            </nav>
+
+            <div className='h-full w-1/2 overflow-y-auto px-6 pt-10 pb-12'>
               <button
                 type='button'
-                className='flex items-center gap-2 text-sm'
+                className='mb-8 flex items-center gap-1.5 text-[13px] tracking-[0.04em]'
                 onClick={() => setMobileStack('root')}
               >
                 <Icons.chevronLeft className='size-4' />
                 Back
               </button>
-            ) : (
-              <span className='text-lg'>Menu</span>
-            )}
-            <button type='button' onClick={onClose} aria-label='Close menu'>
-              <Icons.close className='size-5' />
-            </button>
-          </div>
-
-          <div className='flex-1 overflow-y-auto px-6 py-8'>
-            {mobileStack === 'root' ? (
-              <nav className='space-y-5'>
-                {primaryNav.map((item) =>
-                  item.categorySlug ? (
-                    <button
-                      key={item.label}
-                      type='button'
-                      className='block w-full text-left text-xl'
-                      onClick={() => {
-                        onActiveNavChange(item);
-                        setMobileStack('children');
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ) : (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      onClick={onClose}
-                      className='block text-xl'
-                    >
-                      {item.label}
-                    </Link>
-                  )
-                )}
-              </nav>
-            ) : (
-              <div>
-                <p className='mb-6 text-xl'>{activeNav?.label}</p>
-                <ul className='space-y-4'>
-                  {children.map((child) => (
+              <p className='mb-8 text-[22px] leading-none tracking-[0.02em]'>{activeNav?.label}</p>
+              <ul className='space-y-6'>
+                {loadingChildren ? (
+                  <li className='text-sukoon-black/50 text-[15px]'>Loading…</li>
+                ) : (
+                  children.map((child) => (
                     <li key={child.href + child.label}>
-                      <Link href={child.href} onClick={onClose} className='text-base'>
+                      <Link
+                        href={child.href}
+                        onClick={onClose}
+                        className='block text-[17px] tracking-[0.02em]'
+                      >
                         {child.label}
                       </Link>
                     </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                  ))
+                )}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

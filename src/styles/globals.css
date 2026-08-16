@@ -10,8 +10,33 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+  a,
+  button,
+  label[for],
+  select,
+  summary,
+  [role='button'],
+  [role='link'],
+  [role='menuitem'],
+  [role='option'],
+  [role='tab'],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='file'] {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
   }
 
   /* Global scrollbar styling to match ScrollArea */

@@ -26,8 +26,8 @@ export function ProductCard({ product, className, catalogue = false }: ProductCa
       <Link href={`/product/${product.slug}`} className='relative block overflow-hidden'>
         <div
           className={cn(
-            'bg-muted relative aspect-[477/636] w-full overflow-hidden md:h-[636px] md:aspect-auto',
-            catalogue && 'aspect-[477/718] md:h-auto md:aspect-[477/718]'
+            'bg-muted relative aspect-477/636 w-full overflow-hidden md:h-159 md:aspect-auto',
+            catalogue && 'aspect-477/718 md:h-auto md:aspect-477/718'
           )}
         >
           {primary ? (
@@ -59,14 +59,14 @@ export function ProductCard({ product, className, catalogue = false }: ProductCa
         </div>
       </Link>
 
-      <div className='mt-[16px] flex items-start justify-between gap-3 px-4'>
+      <div className='mt-4 flex items-start justify-between gap-3 px-4'>
         <Link
           href={`/product/${product.slug}`}
-          className='hover:text-foreground/70 min-w-0 text-[14px] leading-[18px] tracking-[0.42px] uppercase transition-colors'
+          className='hover:text-foreground/70 min-w-0 text-[14px] leading-4.5 tracking-[0.42px] uppercase transition-colors'
         >
           {product.name}
         </Link>
-        <div className='shrink-0 text-right text-[14px] leading-[18px] tracking-[0.42px] uppercase'>
+        <div className='shrink-0 text-right text-[14px] leading-4.5 tracking-[0.42px] uppercase'>
           {product.compare_at_price ? (
             <p className='text-muted-foreground text-xs line-through'>
               {formatPrice(product.compare_at_price)}
@@ -75,8 +75,25 @@ export function ProductCard({ product, className, catalogue = false }: ProductCa
           <p>{formatPrice(product.price)}</p>
         </div>
       </div>
-      <div className='mt-2 px-4'>
+      <div className='mt-2 flex items-center justify-between gap-3 px-4'>
         <ColorSwatches colors={product.colors} shape='square' />
+        {product.sizes.length > 0 ? (
+          <ul className='flex gap-2 text-[11px] leading-none tracking-[0.22px] uppercase opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100'>
+            {product.sizes.map((size) => {
+              const inStock =
+                product.variants.length === 0 ||
+                product.variants.some(
+                  (variant) => variant.size === size && variant.stock_quantity > 0
+                );
+
+              return (
+                <li key={size} className={inStock ? 'text-sukoon-black' : 'text-sukoon-black/30'}>
+                  {size}
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
       </div>
     </article>
   );

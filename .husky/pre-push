@@ -1,1 +1,7 @@
-bun run build
+#!/usr/bin/env sh
+# Prefer bun when available; fall back to npm (Windows Git Bash often lacks bun on PATH).
+if command -v bun >/dev/null 2>&1; then
+  bun run build
+else
+  npm run build
+fi

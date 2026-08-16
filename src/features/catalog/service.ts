@@ -56,6 +56,16 @@ function slugifyLabel(value: string): string {
     .replace(/^-|-$/g, '');
 }
 
+/** Strip PostgREST `or()` / ilike metacharacters so user input cannot break the filter. */
+function sanitizeSearchTerm(value: string): string | null {
+  const cleaned = value
+    .replace(/[%_\\,()*]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
 export async function getCategories(): Promise<Category[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase
@@ -133,10 +143,10 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
     query = query.in('product_type', filters.product_types);
   }
 
-  if (filters.search?.trim()) {
-    const term = filters.search.trim();
+  const searchTerm = sanitizeSearchTerm(filters.search ?? '');
+  if (searchTerm) {
     query = query.or(
-      `name.ilike.%${term}%,description.ilike.%${term}%,product_type.ilike.%${term}%`
+      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,product_type.ilike.%${searchTerm}%`
     );
   }
 

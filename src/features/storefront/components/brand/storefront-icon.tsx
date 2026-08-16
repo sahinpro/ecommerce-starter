@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 import { cn } from '@/lib/utils';
 
 const icons = {
@@ -6,25 +8,15 @@ const icons = {
     width: 16,
     height: 14
   },
-  account: {
-    src: '/sukoon/icons/icon-account.svg',
-    width: 16,
-    height: 18
-  },
   wishlist: {
     src: '/sukoon/icons/icon-wishlist.svg',
     width: 16,
     height: 14
   },
   bag: {
-    src: '/sukoon/icons/icon-bag.svg',
-    width: 16,
-    height: 16
-  },
-  currencyChevron: {
-    src: '/sukoon/icons/currency-chevron.svg',
-    width: 12,
-    height: 13
+    src: '/assets/shopping-basket-01.svg',
+    width: 18,
+    height: 18
   },
   close: {
     src: '/sukoon/icons/icon-close-b.svg',
@@ -39,19 +31,22 @@ type StorefrontIconProps = {
   name: StorefrontIconName;
   className?: string;
   alt?: string;
+  /** White assets by default; dark inverts for light backgrounds. */
+  tone?: 'light' | 'dark';
 };
 
-export function StorefrontIcon({ name, className, alt = '' }: StorefrontIconProps) {
+export function StorefrontIcon({ name, className, alt = '', tone = 'light' }: StorefrontIconProps) {
   const icon = icons[name];
 
   return (
-    <img
+    <Image
       src={icon.src}
       alt={alt}
       width={icon.width}
       height={icon.height}
-      className={cn('block shrink-0', className)}
+      className={cn('block shrink-0', tone === 'dark' && 'brightness-0', className)}
       aria-hidden={alt ? undefined : true}
+      unoptimized
     />
   );
 }

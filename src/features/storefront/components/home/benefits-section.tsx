@@ -8,14 +8,14 @@ export async function BenefitsSection() {
   return (
     /* Figma 1:159 — heading top 52; images top 80, 640×853.33 */
     <section className='pb-0' data-node-id='1:159'>
-      <h2 className='px-10 pt-10 pb-8 text-[20px] leading-6 font-bold tracking-[0.2px] uppercase md:pt-[40px] md:pb-[32px]'>
+      <h2 className='px-10 pt-10 pb-8 text-[20px] leading-6 font-bold tracking-[0.2px] uppercase md:pt-10 md:pb-8'>
         Benefits of cashmere
       </h2>
       <div className='grid grid-cols-1 md:grid-cols-3'>
         {benefits.map((benefit) => (
           <div
             key={benefit.id}
-            className='relative aspect-[640/853.33] overflow-hidden md:h-[853.33px] md:aspect-auto'
+            className='relative aspect-640/853.33 overflow-hidden md:h-[853.33px] md:aspect-auto'
           >
             <Image
               src={benefit.image_url}

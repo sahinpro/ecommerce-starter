@@ -68,7 +68,7 @@ function Button({
       data-slot='button'
       className={cn(
         buttonVariants({ variant, size }),
-        'grid place-items-center [&>*]:col-start-1 [&>*]:row-start-1',
+        'grid place-items-center *:col-start-1 *:row-start-1',
         className
       )}
       disabled={disabled || isLoading}

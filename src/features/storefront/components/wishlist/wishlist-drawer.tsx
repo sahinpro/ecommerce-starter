@@ -31,7 +31,7 @@ export function WishlistDrawer({ open, onOpenChange }: WishlistDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side='right' className='w-full max-w-[400px] rounded-none p-0'>
+      <SheetContent side='right' className='w-full max-w-100 rounded-none p-0'>
         <SheetHeader className='border-border border-b px-5 py-8'>
           <SheetTitle className='flex items-center gap-2 text-base font-normal'>
             <Icons.heart className='size-4' />

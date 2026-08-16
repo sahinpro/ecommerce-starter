@@ -37,7 +37,7 @@ export function NotificationCenter() {
         ) : null}
         <span className='sr-only'>Notifications</span>
       </PopoverTrigger>
-      <PopoverContent align='end' className='w-[calc(100vw-2rem)] p-0 sm:w-[380px]' sideOffset={8}>
+      <PopoverContent align='end' className='w-[calc(100vw-2rem)] p-0 sm:w-95' sideOffset={8}>
         <div className='flex items-center justify-between px-4 py-3'>
           <Link href='/dashboard/notifications' className='group flex items-center gap-1'>
             <h4 className='text-sm font-semibold group-hover:underline'>Notifications</h4>
@@ -62,7 +62,7 @@ export function NotificationCenter() {
           </div>
         </div>
         <Separator />
-        <ScrollArea className='h-[400px]'>
+        <ScrollArea className='h-100'>
           {notifications.length === 0 ? (
             <div className='flex flex-col items-center justify-center py-12'>
               <Icons.notification className='text-muted-foreground/40 mb-2 h-8 w-8' />

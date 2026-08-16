@@ -20,7 +20,7 @@ export function ProductBadgeLabel({ badge, className }: ProductBadgeLabelProps) 
   return (
     <span
       className={cn(
-        'absolute top-[10px] left-3.5 text-[14px] leading-[18px] tracking-[0.42px] uppercase',
+        'absolute top-2.5 left-3.5 text-[14px] leading-4.5 tracking-[0.42px] uppercase',
         className
       )}
     >
