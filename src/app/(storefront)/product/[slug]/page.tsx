@@ -5,13 +5,26 @@ import {
   productQueryOptions,
   relatedProductsQueryOptions
 } from '@/features/storefront/api/queries';
-import { getProductBySlug, getRelatedProducts } from '@/features/storefront/api/service';
+import {
+  getActiveProductSlugs,
+  getProductBySlug,
+  getRelatedProducts
+} from '@/features/storefront/api/service';
 import { ProductDetailView } from '@/features/storefront/components/product/product-detail-view';
 import { getQueryClient } from '@/lib/query-client';
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export async function generateStaticParams() {
+  try {
+    const slugs = await getActiveProductSlugs();
+    return slugs.map((slug) => ({ slug }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;

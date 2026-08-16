@@ -208,6 +208,20 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return toCatalogProduct(data as Parameters<typeof toCatalogProduct>[0]);
 }
 
+export async function getActiveProductSlugs(): Promise<string[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from('products')
+    .select('slug')
+    .eq('status', 'active')
+    .is('deleted_at', null);
+
+  if (error) throw catalogError('Failed to list product slugs', error);
+  return (data ?? [])
+    .map((row) => row.slug)
+    .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
+}
+
 export async function getProductById(id: string): Promise<Product | null> {
   const supabase = getSupabase();
   const { data, error } = await supabase

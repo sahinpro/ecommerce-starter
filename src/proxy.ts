@@ -48,8 +48,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    '/(api|trpc)(.*)'
-  ]
+  // Keep auth refresh off the public storefront so those pages can stay static.
+  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth/:path*', '/api/:path*']
 };

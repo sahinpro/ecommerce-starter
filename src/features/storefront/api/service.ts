@@ -1,4 +1,5 @@
 import {
+  getActiveProductSlugs as catalogGetActiveProductSlugs,
   getCategories as catalogGetCategories,
   getCategoryBySlug as catalogGetCategoryBySlug,
   getFeaturedProducts as catalogGetFeaturedProducts,
@@ -39,6 +40,10 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   const product = await catalogGetProductBySlug(slug);
   if (!product || product.status !== 'active' || product.deleted_at) return null;
   return product;
+}
+
+export async function getActiveProductSlugs(): Promise<string[]> {
+  return catalogGetActiveProductSlugs();
 }
 
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
