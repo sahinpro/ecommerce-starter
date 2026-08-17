@@ -82,7 +82,7 @@ export function StorefrontFooter() {
           <SukoonLogo variant='footer' className='mt-16 lg:mt-18' />
         </div>
 
-        <div className='grid gap-10 sm:grid-cols-2 lg:mt-1 lg:grid-cols-4 lg:gap-x-8.75'>
+        <div className='mt-2 grid grid-cols-2 gap-x-8 gap-y-10 lg:mt-1 lg:grid-cols-4 lg:gap-x-8.75'>
           {Object.entries(footerLinks).map(([section, links]) => (
             <div key={section}>
               <p className='mb-5 text-[12px] leading-3 font-bold tracking-[0.24px] uppercase'>
@@ -108,10 +108,10 @@ export function StorefrontFooter() {
         </div>
       </div>
 
-      <div className='mx-auto max-w-480 px-10 pb-6 lg:pl-240'>
+      <div className='mx-auto container px-10 pb-6 text-center '>
         <div
           className={cn(
-            'flex flex-wrap gap-x-12 gap-y-2 text-[11px] leading-4 tracking-[0.44px] text-black/50 uppercase'
+            'flex flex-wrap gap-x-12 justify-center gap-y-2 text-[11px] text-center leading-4 tracking-[0.44px] text-black/50 uppercase'
           )}
         >
           <span>Copyright {new Date().getFullYear()} © Sukoon</span>
