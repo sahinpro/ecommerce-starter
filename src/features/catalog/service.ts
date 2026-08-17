@@ -4,6 +4,7 @@ import { createSupabaseAnonClient } from '@/lib/supabase/anon';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 import { buildFilterOptions, PRODUCT_DETAIL_SELECT, toCatalogProduct } from './adapters';
+import { getCollectionNavChildren } from './figma-taxonomy';
 import { categoryMutationSchema } from './schemas/category';
 import {
   productImageMutationSchema,
@@ -315,29 +316,9 @@ export async function getFilterOptions(categorySlug?: string): Promise<FilterOpt
   return buildFilterOptions(result.products);
 }
 
-/** Secondary nav: Shop All + live product_types only (never invent competitor children). */
+/** Secondary nav: Shop All + static collection product types. */
 export async function getCategoryNavChildren(categorySlug: string): Promise<NavChildLink[]> {
-  const shopAllHref = `/shop/${categorySlug}`;
-  const category = await getCategoryBySlug(categorySlug);
-  if (!category) return [{ label: 'Shop All', href: shopAllHref }];
-
-  const result = await getProducts({
-    category: categorySlug,
-    status: 'active',
-    limit: 100
-  });
-
-  const types = Array.from(
-    new Set(result.products.map((p) => p.product_type).filter(Boolean) as string[])
-  ).sort((a, b) => a.localeCompare(b));
-
-  return [
-    { label: 'Shop All', href: shopAllHref },
-    ...types.map((type) => ({
-      label: type,
-      href: `/shop/${categorySlug}?types=${encodeURIComponent(type)}`
-    }))
-  ];
+  return getCollectionNavChildren(categorySlug);
 }
 
 export async function createCategory(input: CategoryMutationPayload): Promise<Category> {

@@ -30,7 +30,6 @@ const footerLinks: Record<string, readonly { label: string; href: string; extern
 
 export function StorefrontFooter() {
   return (
-    /* Figma 1:173 — 440px, #f7f9f2; form column 450px from left 40 */
     <footer className='bg-sukoon-footer text-sukoon-black md:min-h-110' data-node-id='1:173'>
       <div className='relative mx-auto grid max-w-480 gap-16 px-4 pt-10 pb-10 lg:grid-cols-[450px_minmax(0,1fr)] lg:gap-17.5 lg:pb-25'>
         <div className='flex max-w-112.5 flex-col'>

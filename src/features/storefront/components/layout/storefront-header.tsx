@@ -18,7 +18,6 @@ import { WishlistDrawer } from '../wishlist/wishlist-drawer';
 import { AnnouncementBar } from './announcement-bar';
 import { StorefrontMegaMenu } from './storefront-mega-menu';
 
-const CLOSE_DELAY_MS = 220;
 const SCROLL_DELTA = 6;
 const SHOW_AFTER_TOP = 8;
 const STICKY_REVEAL_Y = 48;
@@ -27,18 +26,14 @@ const SLIDE_MS = 400;
 type HeaderMenuButtonProps = {
   open: boolean;
   onToggle: () => void;
-  onHoverOpen: () => void;
   inverted: boolean;
 };
 
-function HeaderMenuButton({ open, onToggle, onHoverOpen, inverted }: HeaderMenuButtonProps) {
+function HeaderMenuButton({ open, onToggle, inverted }: HeaderMenuButtonProps) {
   return (
     <button
       type='button'
       onClick={onToggle}
-      onPointerEnter={(event) => {
-        if (event.pointerType === 'mouse') onHoverOpen();
-      }}
       className={cn(
         'flex w-fit cursor-pointer items-center gap-2 text-[14px] tracking-[0.04em] hover:opacity-70 md:text-[13px] md:tracking-[0.26px]',
         inverted
@@ -122,26 +117,24 @@ function HeaderTools({
 
 type HeaderChromeProps = {
   inverted: boolean;
+  stackedNav: boolean;
   menuOpen: boolean;
   announcementVisible: boolean;
   onAnnouncementDismiss: () => void;
   toolsProps: Omit<HeaderToolsProps, 'inverted'>;
   onMenuToggle: () => void;
-  onMenuHoverOpen: () => void;
-  onNavEnter: (item: NavPrimaryItem) => void;
-  onNavStay: () => void;
+  onNavItemHover: (item: NavPrimaryItem) => void;
 };
 
 function HeaderChrome({
   inverted,
+  stackedNav,
   menuOpen,
   announcementVisible,
   onAnnouncementDismiss,
   toolsProps,
   onMenuToggle,
-  onMenuHoverOpen,
-  onNavEnter,
-  onNavStay
+  onNavItemHover
 }: HeaderChromeProps) {
   return (
     <>
@@ -149,12 +142,7 @@ function HeaderChrome({
 
       <div className='relative mx-auto grid h-14 max-w-480 grid-cols-[1fr_auto_1fr] items-center px-4 md:hidden'>
         <div className='justify-self-start'>
-          <HeaderMenuButton
-            open={menuOpen}
-            onToggle={onMenuToggle}
-            onHoverOpen={onMenuHoverOpen}
-            inverted={inverted}
-          />
+          <HeaderMenuButton open={menuOpen} onToggle={onMenuToggle} inverted={inverted} />
         </div>
         <SukoonLogo
           variant='header'
@@ -166,26 +154,33 @@ function HeaderChrome({
         </div>
       </div>
 
-      <div className='relative mx-auto hidden h-auto w-full max-w-480 grid-cols-[1fr_auto_1fr] items-start px-10 pt-7 pb-8 md:grid'>
+      <div
+        className={cn(
+          'relative mx-auto hidden w-full max-w-480 grid-cols-[1fr_auto_1fr] px-10 md:grid',
+          stackedNav ? 'h-auto items-start pt-7 pb-8' : 'h-20 items-center'
+        )}
+      >
         <nav
           aria-label='Primary'
           className={cn(
-            'z-10 flex flex-col gap-4 text-[12px] leading-3.25 tracking-[0.26px]',
+            'z-10 flex text-[12px] leading-3.25 tracking-[0.26px]',
+            stackedNav ? 'flex-col gap-4' : 'flex-row flex-wrap items-center gap-x-5 gap-y-1',
             inverted ? 'text-sukoon-black' : 'text-white',
             menuOpen && 'pointer-events-none opacity-0'
           )}
-          onMouseEnter={onNavStay}
         >
           {PRIMARY_NAV.map((item) => (
-            <Link
+            <button
               key={item.label}
-              href={item.href}
-              onMouseEnter={() => onNavEnter(item)}
-              onFocus={() => onNavEnter(item)}
-              className='w-fit transition-opacity hover:opacity-70'
+              type='button'
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse') onNavItemHover(item);
+              }}
+              onFocus={() => onNavItemHover(item)}
+              className='w-fit cursor-pointer text-left transition-opacity hover:opacity-70'
             >
               {item.label}
-            </Link>
+            </button>
           ))}
         </nav>
 
@@ -215,17 +210,8 @@ export function StorefrontHeader() {
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const cartCount = useCartStore((s) => (s.hasHydrated ? s.itemCount() : 0));
   const wishlistCount = useWishlistStore((s) => (s.hasHydrated ? s.count() : 0));
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function clearCloseTimer() {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-  }
 
   function openMenu(item?: NavPrimaryItem) {
-    clearCloseTimer();
     if (item) setActiveNav(item);
     setMenuOpen(true);
     if (!isHome || window.scrollY > SHOW_AFTER_TOP) setShowSticky(true);
@@ -238,17 +224,6 @@ export function StorefrontHeader() {
     }
     openMenu(activeNav ?? undefined);
   }
-
-  function scheduleClose() {
-    clearCloseTimer();
-    closeTimerRef.current = setTimeout(() => {
-      setMenuOpen(false);
-    }, CLOSE_DELAY_MS);
-  }
-
-  useEffect(() => {
-    return () => clearCloseTimer();
-  }, []);
 
   useEffect(() => {
     setShowSticky(!isHome || window.scrollY > SHOW_AFTER_TOP);
@@ -306,7 +281,6 @@ export function StorefrontHeader() {
 
   useEffect(() => {
     if (!menuOpen) return;
-    if (window.matchMedia('(min-width: 768px)').matches) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -335,9 +309,7 @@ export function StorefrontHeader() {
     onAnnouncementDismiss: () => setAnnouncementVisible(false),
     toolsProps,
     onMenuToggle: toggleMenu,
-    onMenuHoverOpen: () => openMenu(activeNav ?? undefined),
-    onNavEnter: openMenu,
-    onNavStay: clearCloseTimer
+    onNavItemHover: openMenu
   };
 
   return (
@@ -346,11 +318,8 @@ export function StorefrontHeader() {
         <header
           className='absolute inset-x-0 top-0 z-40 w-full bg-transparent'
           data-node-id='1:215'
-          onMouseLeave={() => {
-            if (window.matchMedia('(min-width: 768px)').matches) scheduleClose();
-          }}
         >
-          <HeaderChrome inverted={false} {...chromeProps} />
+          <HeaderChrome inverted={false} stackedNav {...chromeProps} />
         </header>
       ) : null}
 
@@ -363,12 +332,9 @@ export function StorefrontHeader() {
         )}
         style={{ transitionDuration: `${SLIDE_MS}ms` }}
         aria-hidden={!showSticky}
-        onMouseLeave={() => {
-          if (window.matchMedia('(min-width: 768px)').matches) scheduleClose();
-        }}
       >
         <div className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-black/10' />
-        <HeaderChrome inverted {...chromeProps} />
+        <HeaderChrome inverted stackedNav={false} {...chromeProps} />
       </header>
 
       {!isHome ? <div style={{ height: headerHeight }} aria-hidden /> : null}
@@ -378,8 +344,6 @@ export function StorefrontHeader() {
         activeNav={activeNav}
         onActiveNavChange={setActiveNav}
         onClose={() => setMenuOpen(false)}
-        onPointerEnter={clearCloseTimer}
-        onPointerLeave={scheduleClose}
         primaryNav={PRIMARY_NAV}
         onSearch={() => {
           setMenuOpen(false);

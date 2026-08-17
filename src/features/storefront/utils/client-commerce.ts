@@ -9,6 +9,7 @@
 export const CLIENT_COMMERCE = {
   cartStorageKey: 'sukoon-cart',
   wishlistStorageKey: 'sukoon-wishlist',
+  recentlyViewedStorageKey: 'sukoon-recently-viewed',
   /** Bump when persisted shape changes; Zustand migrate handles upgrades. */
   storageVersion: 1
 } as const;

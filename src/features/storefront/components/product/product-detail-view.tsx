@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Icons } from '@/components/icons';
@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 import type { Product, ProductColor, ProductImage } from '../../api/types';
+import { PRODUCT_IMAGE_FALLBACK } from '../../constants/product-image';
 import { useCartStore } from '../../utils/cart-store';
 import { formatPrice } from '../../utils/format-price';
+import { useRecentlyViewedStore } from '../../utils/recently-viewed-store';
 import { useWishlistStore } from '../../utils/wishlist-store';
 import { ColorSwatches } from '../product/color-swatches';
 import { ProductCard } from '../product/product-card';
@@ -58,17 +60,14 @@ function DetailTabs({ product }: { product: Product }) {
 function ProductGallery({ images, productName }: { images: ProductImage[]; productName: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const current = images[activeIndex] ?? images[0];
-
-  if (!current) {
-    return <div className='bg-muted aspect-960/1087 w-full' />;
-  }
+  const currentSrc = current?.url?.trim() || PRODUCT_IMAGE_FALLBACK;
 
   return (
     <div className='flex flex-col gap-3 px-4 lg:px-0'>
       <div className='bg-muted relative aspect-960/1087 w-full'>
         <Image
-          src={current.url}
-          alt={current.alt ?? productName}
+          src={currentSrc}
+          alt={current?.alt ?? productName}
           fill
           priority
           className='object-cover'
@@ -115,6 +114,19 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
 
   const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<string | undefined>(product.sizes[0]);
+
+  useEffect(() => {
+    function trackCurrent() {
+      useRecentlyViewedStore.getState().track(product.id);
+    }
+
+    if (useRecentlyViewedStore.persist.hasHydrated()) {
+      trackCurrent();
+      return;
+    }
+
+    return useRecentlyViewedStore.persist.onFinishHydration(trackCurrent);
+  }, [product.id]);
 
   function handleAddToCart() {
     if (!selectedColor || !selectedSize) {
@@ -224,8 +236,8 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
       </div>
 
       {related.length > 0 ? (
-        <section className='border-border border-t px-10 py-16'>
-          <h2 className='font-serif mb-8 text-2xl'>You may also like</h2>
+        <section className='border-border border-t  py-16'>
+          <h2 className='font-serif mb-8 text-2xl ml-4'>You may also like</h2>
           <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
             {related.map((item) => (
               <ProductCard key={item.id} product={item} />

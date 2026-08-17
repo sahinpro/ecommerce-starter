@@ -17,7 +17,7 @@ export function AnnouncementBar({ visible = true, onDismiss }: AnnouncementBarPr
     <div
       className={cn(
         'relative flex h-10 w-full shrink-0 items-center justify-center overflow-hidden px-4',
-        'bg-black text-white md:px-10'
+        'bg-white text-black md:px-10'
       )}
       data-node-id='1:216'
     >

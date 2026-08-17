@@ -8,7 +8,8 @@ export {
   FIGMA_PRIMARY_CATEGORIES,
   buildPrimaryNav,
   figmaCategorySortIndex,
-  getCollectionBlurb
+  getCollectionBlurb,
+  getCollectionNavChildren
 } from './figma-taxonomy';
 export {
   buildFilterOptions,

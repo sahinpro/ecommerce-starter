@@ -44,7 +44,6 @@
   --sidebar-border: oklch(0.92 0 0);
   --sidebar-ring: oklch(0.15 0 0);
   --font-sans: var(--font-inter), Inter, sans-serif;
-  /* Figma display/editorial uses Georgia; keep Playfair as secondary */
   --font-serif: Georgia, 'Times New Roman', var(--font-playfair-display), serif;
   --font-mono: var(--font-mono), 'Geist Mono', monospace;
   --radius: 0rem;

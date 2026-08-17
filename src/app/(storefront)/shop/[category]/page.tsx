@@ -5,7 +5,10 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { FIGMA_PRIMARY_CATEGORIES } from '@/features/catalog/figma-taxonomy';
 import { categoryQueryOptions, productsQueryOptions } from '@/features/storefront/api/queries';
 import { getCategories, getCategoryBySlug } from '@/features/storefront/api/service';
-import { ShopListing } from '@/features/storefront/components/shop/shop-listing';
+import {
+  ShopListing,
+  ShopListingSkeleton
+} from '@/features/storefront/components/shop/shop-listing';
 import { getQueryClient } from '@/lib/query-client';
 
 type CategoryPageProps = {
@@ -45,7 +48,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<div className='px-10 py-16'>Loading…</div>}>
+      <Suspense fallback={<ShopListingSkeleton />}>
         <ShopListing category={category} title={categoryData.name} />
       </Suspense>
     </HydrationBoundary>

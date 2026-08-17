@@ -1,16 +1,26 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 
 import { Icons } from '@/components/icons';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 import { filterOptionsQueryOptions, productsQueryOptions } from '../../api/queries';
+import type { FilterOptions, ProductFilters } from '../../api/types';
 import { ProductCard } from '../product/product-card';
 import { FilterPanel } from './filter-panel';
+
+const EMPTY_FILTER_OPTIONS: FilterOptions = {
+  sizes: [],
+  colors: [],
+  product_types: []
+};
+
+const SKELETON_COUNT = 8;
 
 type ShopListingProps = {
   category?: string;
@@ -52,8 +62,9 @@ export function ShopListing({ category, title }: ShopListingProps) {
     [category, params, search]
   );
 
-  const { data } = useSuspenseQuery(productsQueryOptions(filters));
-  const { data: filterOptions } = useSuspenseQuery(filterOptionsQueryOptions(category));
+  const { data: filterOptions = EMPTY_FILTER_OPTIONS } = useQuery(
+    filterOptionsQueryOptions(category)
+  );
 
   function toggleValue(list: string[], value: string, setter: (v: string[]) => void) {
     setter(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -134,22 +145,92 @@ export function ShopListing({ category, title }: ShopListingProps) {
         </div>
       </div>
 
-      <div
-        className={cn(
-          'grid gap-x-4 gap-y-10',
-          params.view === 'grid' ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2'
-        )}
-      >
-        {data.products.map((product) => (
-          <ProductCard key={product.id} product={product} catalogue={params.view === 'catalogue'} />
-        ))}
-      </div>
-
-      {data.products.length === 0 ? (
-        <p className='text-muted-foreground py-20 text-center'>
-          {search ? 'No products match your search.' : 'Nothing here yet.'}
-        </p>
-      ) : null}
+      <Suspense fallback={<ProductGridSkeleton view={params.view} />}>
+        <ShopProductGrid filters={filters} search={search} view={params.view} />
+      </Suspense>
     </div>
+  );
+}
+
+type ShopView = 'grid' | 'catalogue';
+
+type ShopProductGridProps = {
+  filters: ProductFilters;
+  search: string;
+  view: ShopView;
+};
+
+function ShopProductGrid({ filters, search, view }: ShopProductGridProps) {
+  const { data } = useSuspenseQuery(productsQueryOptions(filters));
+
+  if (data.products.length === 0) {
+    return (
+      <p className='text-muted-foreground py-20 text-center'>
+        {search ? 'No products match your search.' : 'Nothing here yet.'}
+      </p>
+    );
+  }
+
+  return (
+    <div className={productGridClassName(view)}>
+      {data.products.map((product) => (
+        <ProductCard key={product.id} product={product} catalogue={view === 'catalogue'} />
+      ))}
+    </div>
+  );
+}
+
+export function ShopListingSkeleton({ view = 'grid' }: { view?: ShopView }) {
+  return (
+    <div className='px-6 py-8 md:px-6' aria-busy='true' aria-label='Loading products'>
+      <div className='mb-8 flex flex-wrap items-center justify-between gap-4'>
+        <Skeleton className='h-8 w-40 rounded-none' />
+        <div className='flex items-center gap-6'>
+          <Skeleton className='h-4 w-20 rounded-none' />
+          <Skeleton className='h-4 w-28 rounded-none' />
+          <Skeleton className='h-8 w-22 rounded-none' />
+        </div>
+      </div>
+      <ProductGridSkeleton view={view} />
+    </div>
+  );
+}
+
+function ProductGridSkeleton({ view }: { view: ShopView }) {
+  return (
+    <div className={productGridClassName(view)} aria-hidden>
+      {Array.from({ length: SKELETON_COUNT }, (_, index) => (
+        <ProductCardSkeleton key={index} catalogue={view === 'catalogue'} />
+      ))}
+    </div>
+  );
+}
+
+function ProductCardSkeleton({ catalogue }: { catalogue: boolean }) {
+  return (
+    <article>
+      <Skeleton
+        className={cn(
+          'aspect-477/636 w-full rounded-none md:h-159 md:aspect-auto',
+          catalogue && 'aspect-477/718 md:h-auto md:aspect-477/718'
+        )}
+      />
+      <div className='mt-4 flex items-start justify-between gap-3 px-4'>
+        <Skeleton className='h-4 w-28 rounded-none' />
+        <Skeleton className='h-4 w-14 rounded-none' />
+      </div>
+      <div className='mt-2 flex items-center gap-1.5 px-4'>
+        <Skeleton className='size-3 rounded-none' />
+        <Skeleton className='size-3 rounded-none' />
+        <Skeleton className='size-3 rounded-none' />
+      </div>
+    </article>
+  );
+}
+
+function productGridClassName(view: ShopView): string {
+  return cn(
+    'grid gap-x-4 gap-y-10',
+    view === 'grid' ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2'
   );
 }

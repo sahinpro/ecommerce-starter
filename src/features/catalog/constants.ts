@@ -1,5 +1,9 @@
 import type { NavPrimaryItem } from './types';
-import { FIGMA_ABOUT_NAV, FIGMA_PRIMARY_CATEGORIES } from './figma-taxonomy';
+import {
+  FIGMA_ABOUT_NAV,
+  FIGMA_PRIMARY_CATEGORIES,
+  getCollectionNavChildren
+} from './figma-taxonomy';
 
 /**
  * Static primary nav blueprint from client collections
@@ -11,7 +15,8 @@ export const PRIMARY_NAV: NavPrimaryItem[] = [
   ...FIGMA_PRIMARY_CATEGORIES.map((item) => ({
     label: item.name,
     href: item.href,
-    categorySlug: item.slug
+    categorySlug: item.slug,
+    children: getCollectionNavChildren(item.slug)
   })),
   FIGMA_ABOUT_NAV
 ];

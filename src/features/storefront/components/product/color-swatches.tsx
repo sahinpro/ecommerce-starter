@@ -22,7 +22,7 @@ export function ColorSwatches({
   const dim = shape === 'square' ? 'size-3' : size === 'sm' ? 'size-3' : 'size-5';
 
   return (
-    <div className={cn('flex flex-wrap gap-1', className)}>
+    <div className={cn('flex flex-wrap gap-3', className)}>
       {colors.map((color) => {
         const isSelected = selectedId === color.id;
         const swatchClass = cn(

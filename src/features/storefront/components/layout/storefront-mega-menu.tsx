@@ -5,7 +5,6 @@ import { useEffect, useState, type MouseEvent } from 'react';
 
 import { Icons } from '@/components/icons';
 import { getCollectionBlurb } from '@/features/catalog/figma-taxonomy';
-import { getCategoryNavChildren } from '@/features/catalog/service';
 import type { NavChildLink, NavPrimaryItem } from '@/features/catalog/types';
 import { cn } from '@/lib/utils';
 
@@ -20,27 +19,31 @@ type StorefrontMegaMenuProps = {
   activeNav: NavPrimaryItem | null;
   onActiveNavChange: (item: NavPrimaryItem) => void;
   onClose: () => void;
-  onPointerEnter: () => void;
-  onPointerLeave: () => void;
   primaryNav: NavPrimaryItem[];
   onSearch?: () => void;
   cartCount?: number;
 };
+
+function navChildrenFor(item: NavPrimaryItem | null): NavChildLink[] {
+  if (!item) return [];
+  if (item.children?.length) return item.children;
+  if (item.categorySlug) {
+    return [{ label: 'Shop All', href: item.href }];
+  }
+  return [{ label: item.label, href: item.href }];
+}
 
 export function StorefrontMegaMenu({
   open,
   activeNav,
   onActiveNavChange,
   onClose,
-  onPointerEnter,
-  onPointerLeave,
   primaryNav,
   onSearch,
   cartCount = 0
 }: StorefrontMegaMenuProps) {
-  const [children, setChildren] = useState<NavChildLink[]>([]);
   const [mobileStack, setMobileStack] = useState<'root' | 'children'>('root');
-  const [loadingChildren, setLoadingChildren] = useState(false);
+  const children = navChildrenFor(activeNav);
 
   useEffect(() => {
     if (open) return;
@@ -57,38 +60,6 @@ export function StorefrontMegaMenu({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
-
-  useEffect(() => {
-    if (!open || !activeNav) {
-      setChildren([]);
-      return;
-    }
-
-    if (!activeNav.categorySlug) {
-      setChildren([{ label: activeNav.label, href: activeNav.href }]);
-      setLoadingChildren(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoadingChildren(true);
-    void getCategoryNavChildren(activeNav.categorySlug)
-      .then((links) => {
-        if (!cancelled) setChildren(links);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setChildren([{ label: 'Shop All', href: activeNav.href }]);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingChildren(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeNav, open]);
 
   function openSubmenu(item: NavPrimaryItem, event: MouseEvent<HTMLButtonElement>) {
     event.preventDefault();
@@ -109,7 +80,7 @@ export function StorefrontMegaMenu({
         type='button'
         tabIndex={open ? 0 : -1}
         className={cn(
-          'absolute inset-0 hidden cursor-pointer bg-white/60 transition-opacity duration-350 ease-out md:block',
+          'absolute inset-0 hidden cursor-pointer bg-black/40 transition-opacity duration-300 ease-out md:block',
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
         aria-label='Close menu'
@@ -122,9 +93,16 @@ export function StorefrontMegaMenu({
           'transition-opacity duration-350 ease-out',
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
-        onMouseEnter={onPointerEnter}
-        onMouseLeave={onPointerLeave}
       >
+        <button
+          type='button'
+          onClick={onClose}
+          className='text-sukoon-black absolute top-7 right-8 z-10 cursor-pointer transition-opacity hover:opacity-70'
+          aria-label='Close menu'
+        >
+          <Icons.close className='size-4' />
+        </button>
+
         <div className='grid h-full w-full md:grid-cols-[minmax(180px,220px)_1fr]'>
           <div className='flex flex-col' data-menu-level={1}>
             <div className='h-10 shrink-0' aria-hidden />
@@ -140,19 +118,17 @@ export function StorefrontMegaMenu({
                       {isActive ? (
                         <span className='bg-sukoon-black absolute top-1/2 -left-3 size-1.5 -translate-y-1/2' />
                       ) : null}
-                      <Link
-                        href={item.href}
+                      <button
+                        type='button'
                         data-menu-trigger={item.categorySlug}
-                        onMouseEnter={() => onActiveNavChange(item)}
-                        onFocus={() => onActiveNavChange(item)}
-                        onClick={onClose}
+                        onClick={() => onActiveNavChange(item)}
                         className={cn(
-                          'nav-link block w-fit text-left transition-opacity hover:opacity-70',
+                          'nav-link block w-fit cursor-pointer text-left transition-opacity hover:opacity-70',
                           isActive ? 'text-sukoon-black' : 'text-sukoon-black/55'
                         )}
                       >
                         {item.label}
-                      </Link>
+                      </button>
                     </div>
                   );
                 })}
@@ -166,21 +142,17 @@ export function StorefrontMegaMenu({
               {activeNav?.categorySlug ? (
                 <div className='flex flex-col gap-5'>
                   <ul className='flex flex-col gap-3 text-[12px] leading-3.25 tracking-[0.26px]'>
-                    {loadingChildren ? (
-                      <li className='text-muted-foreground'>Loading…</li>
-                    ) : (
-                      children.map((child) => (
-                        <li key={child.href + child.label}>
-                          <Link
-                            href={child.href}
-                            onClick={onClose}
-                            className='text-sukoon-black/75 hover:text-sukoon-black cursor-pointer transition-opacity hover:opacity-70'
-                          >
-                            {child.label}
-                          </Link>
-                        </li>
-                      ))
-                    )}
+                    {children.map((child) => (
+                      <li key={child.href + child.label}>
+                        <Link
+                          href={child.href}
+                          onClick={onClose}
+                          className='text-sukoon-black/75 hover:text-sukoon-black cursor-pointer transition-opacity hover:opacity-70'
+                        >
+                          {child.label}
+                        </Link>
+                      </li>
+                    ))}
                   </ul>
                   {getCollectionBlurb(activeNav.categorySlug) ? (
                     <p className='text-sukoon-black/55 max-w-60 text-[12px] leading-relaxed tracking-[0.02em]'>
@@ -282,21 +254,17 @@ export function StorefrontMegaMenu({
               </button>
               <p className='mb-8 text-[22px] leading-none tracking-[0.02em]'>{activeNav?.label}</p>
               <ul className='space-y-6'>
-                {loadingChildren ? (
-                  <li className='text-sukoon-black/50 text-[15px]'>Loading…</li>
-                ) : (
-                  children.map((child) => (
-                    <li key={child.href + child.label}>
-                      <Link
-                        href={child.href}
-                        onClick={onClose}
-                        className='block text-[17px] tracking-[0.02em]'
-                      >
-                        {child.label}
-                      </Link>
-                    </li>
-                  ))
-                )}
+                {children.map((child) => (
+                  <li key={child.href + child.label}>
+                    <Link
+                      href={child.href}
+                      onClick={onClose}
+                      className='block text-[17px] tracking-[0.02em]'
+                    >
+                      {child.label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

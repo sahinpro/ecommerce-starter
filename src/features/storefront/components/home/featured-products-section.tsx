@@ -10,7 +10,6 @@ export function FeaturedProductsSection() {
   const { data: products } = useSuspenseQuery(featuredProductsQueryOptions());
 
   return (
-    /* Figma 1:108 — section 857px; tabs top 64; cards top 101; ~4px gaps */
     <section className='overflow-hidden pb-14 md:min-h-214.25 md:pb-0' data-node-id='1:108'>
       <div className='flex items-center justify-end gap-3.25 px-10 pt-10 text-[13px] leading-3.25 tracking-[0.26px] md:pt-16'>
         <Link href='/shop' className='text-black transition-opacity hover:opacity-70'>

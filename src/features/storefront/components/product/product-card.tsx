@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 import type { Product } from '../../api/types';
+import { PRODUCT_IMAGE_FALLBACK } from '../../constants/product-image';
 import { formatPrice } from '../../utils/format-price';
 import { ColorSwatches } from './color-swatches';
 import { ProductBadgeLabel } from './product-badge';
@@ -17,9 +18,11 @@ type ProductCardProps = {
 };
 
 export function ProductCard({ product, className, catalogue = false }: ProductCardProps) {
-  const primary = product.images[0];
-  const secondary = product.images[1];
-  const hasHoverSwap = Boolean(primary && secondary);
+  const primaryUrl = product.images[0]?.url?.trim();
+  const secondaryUrl = product.images[1]?.url?.trim();
+  const imageSrc = primaryUrl || PRODUCT_IMAGE_FALLBACK;
+  const imageAlt = product.images[0]?.alt ?? product.name;
+  const hasHoverSwap = Boolean(primaryUrl && secondaryUrl);
 
   return (
     <article className={cn('group', className)}>
@@ -30,30 +33,26 @@ export function ProductCard({ product, className, catalogue = false }: ProductCa
             catalogue && 'aspect-477/718 md:h-auto md:aspect-477/718'
           )}
         >
-          {primary ? (
-            <>
-              <Image
-                src={primary.url}
-                alt={primary.alt ?? product.name}
-                fill
-                className={cn(
-                  'object-cover object-center transition-opacity duration-500',
-                  hasHoverSwap
-                    ? 'opacity-100 group-hover:opacity-0'
-                    : 'transition-transform duration-700 group-hover:scale-[1.01]'
-                )}
-                sizes='(max-width: 768px) 50vw, 25vw'
-              />
-              {hasHoverSwap ? (
-                <Image
-                  src={secondary!.url}
-                  alt={secondary!.alt ?? product.name}
-                  fill
-                  className='object-cover object-center opacity-0 transition-opacity duration-500 group-hover:opacity-100 max-md:hidden'
-                  sizes='(max-width: 768px) 50vw, 25vw'
-                />
-              ) : null}
-            </>
+          <Image
+            src={imageSrc}
+            alt={imageAlt}
+            fill
+            className={cn(
+              'object-cover object-center transition-opacity duration-500',
+              hasHoverSwap
+                ? 'opacity-100 group-hover:opacity-0'
+                : 'transition-transform duration-700 group-hover:scale-[1.01]'
+            )}
+            sizes='(max-width: 768px) 50vw, 25vw'
+          />
+          {hasHoverSwap ? (
+            <Image
+              src={secondaryUrl!}
+              alt={product.images[1]?.alt ?? product.name}
+              fill
+              className='object-cover object-center opacity-0 transition-opacity duration-500 group-hover:opacity-100 max-md:hidden'
+              sizes='(max-width: 768px) 50vw, 25vw'
+            />
           ) : null}
           {product.badge ? <ProductBadgeLabel badge={product.badge} /> : null}
         </div>

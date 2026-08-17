@@ -1,4 +1,4 @@
-import type { Category, NavPrimaryItem } from './types';
+import type { Category, NavChildLink, NavPrimaryItem } from './types';
 
 /**
  * Authoritative Sukoon catalog taxonomy — client collection export.
@@ -30,6 +30,8 @@ export type PrimaryCollection = {
   sort_order: number;
   /** Short export note shown in mega-menu secondary column. */
   blurb: string;
+  /** Static product types for mega-menu secondary links. */
+  productTypes: readonly string[];
 };
 
 /** Top-level storefront collections from client export. */
@@ -39,35 +41,40 @@ export const FIGMA_PRIMARY_CATEGORIES: readonly PrimaryCollection[] = [
     name: 'Palestine',
     href: '/shop/palestine',
     sort_order: 1,
-    blurb: 'Cream tee, “PALESTINE” + flag / Arabic back'
+    blurb: 'Cream tee, “PALESTINE” + flag / Arabic back',
+    productTypes: ['Tee', 'Longsleeve']
   },
   {
     slug: 'sukoon',
     name: 'Sukoon',
     href: '/shop/sukoon',
     sort_order: 2,
-    blurb: 'Cream tee, “SUKOON” + “Seek peace within…”'
+    blurb: 'Cream tee, “SUKOON” + “Seek peace within…”',
+    productTypes: ['Tee', 'Hoodie']
   },
   {
     slug: 'sabr',
     name: 'Sabr',
     href: '/shop/sabr',
     sort_order: 3,
-    blurb: 'Black tee, chest “Sabr” / back صبر · PATIENCE'
+    blurb: 'Black tee, chest “Sabr” / back صبر · PATIENCE',
+    productTypes: ['Tee', 'Sweatshirt']
   },
   {
     slug: 'tawakkul',
     name: 'Tawakkul',
     href: '/shop/tawakkul',
     sort_order: 4,
-    blurb: 'Black tee, تَوَكَّل / TAWAKKUL + Quran 65:3 art'
+    blurb: 'Black tee, تَوَكَّل / TAWAKKUL + Quran 65:3 art',
+    productTypes: ['Tee', 'Longsleeve']
   },
   {
     slug: 'brotherhood',
     name: 'Brotherhood',
     href: '/shop/brotherhood',
     sort_order: 5,
-    blurb: 'Black tee, “BROTHERHOOD” / أخوة handshake art'
+    blurb: 'Black tee, “BROTHERHOOD” / أخوة handshake art',
+    productTypes: ['Tee', 'Hoodie']
   }
 ] as const;
 
@@ -94,6 +101,23 @@ export function getCollectionBlurb(slug: string): string | undefined {
   return blurbBySlug.get(slug);
 }
 
+export function getCollectionNavChildren(slug: string): NavChildLink[] {
+  const collection = FIGMA_PRIMARY_CATEGORIES.find((item) => item.slug === slug);
+  const shopAllHref = `/shop/${slug}`;
+
+  if (!collection) {
+    return [{ label: 'Shop All', href: shopAllHref }];
+  }
+
+  return [
+    { label: 'Shop All', href: shopAllHref },
+    ...collection.productTypes.map((type) => ({
+      label: type,
+      href: `/shop/${slug}?types=${encodeURIComponent(type)}`
+    }))
+  ];
+}
+
 /**
  * Build primary nav from Supabase categories, ordered to match client collections.
  * Categories not present in the client list are omitted.
@@ -108,7 +132,8 @@ export function buildPrimaryNav(categories: Category[]): NavPrimaryItem[] {
       {
         label: row.name || figma.name,
         href: figma.href,
-        categorySlug: figma.slug
+        categorySlug: figma.slug,
+        children: getCollectionNavChildren(figma.slug)
       }
     ];
   });
