@@ -233,12 +233,6 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
           </div>
         </section>
       ) : null}
-
-      <div className='px-10 pb-10 lg:hidden'>
-        <Button onClick={() => router.push('/cart')} className='h-12 w-full rounded-none uppercase'>
-          View Cart
-        </Button>
-      </div>
     </div>
   );
 }
