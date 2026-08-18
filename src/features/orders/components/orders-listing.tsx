@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import {
   Table,
   TableBody,
@@ -15,13 +15,6 @@ import { shippingAreaLabel } from '../constants';
 import { listOrders } from '../service';
 import type { OrderFilters } from '../types';
 import { OrdersLoadError } from './orders-load-error';
-
-function statusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  if (status === 'cancelled') return 'destructive';
-  if (status === 'delivered') return 'default';
-  if (status === 'pending') return 'secondary';
-  return 'outline';
-}
 
 export async function OrdersListing({ filters }: { filters?: OrderFilters }) {
   let items;
@@ -39,7 +32,7 @@ export async function OrdersListing({ filters }: { filters?: OrderFilters }) {
 
   if (items.length === 0) {
     return (
-      <div className='text-muted-foreground rounded-md border border-dashed p-10 text-center text-sm'>
+      <div className='bg-card text-muted-foreground rounded-lg border border-dashed p-10 text-center text-sm'>
         No orders yet. Guest COD checkouts will appear here.
       </div>
     );
@@ -48,7 +41,7 @@ export async function OrdersListing({ filters }: { filters?: OrderFilters }) {
   return (
     <div className='space-y-4'>
       <p className='text-muted-foreground text-sm'>{total_items} order(s)</p>
-      <div className='rounded-md border'>
+      <div className='bg-card rounded-lg border'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -81,9 +74,7 @@ export async function OrdersListing({ filters }: { filters?: OrderFilters }) {
                   {order.payment_method} · {order.payment_status}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant(order.order_status)} className='capitalize'>
-                    {order.order_status}
-                  </Badge>
+                  <StatusBadge status={order.order_status} />
                 </TableCell>
                 <TableCell>
                   {order.created_at ? new Date(order.created_at).toLocaleDateString('en-BD') : '—'}

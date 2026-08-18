@@ -129,144 +129,162 @@ export default function ProductForm({
     useFormFields<ProductFormValues>();
 
   return (
-    <div className='mx-auto w-full space-y-6'>
-      <Card>
-        <CardHeader>
-          <CardTitle className='text-left text-2xl font-bold'>{pageTitle}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form.AppForm>
-            <form.Form className='space-y-8'>
-              <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                <FormTextField
-                  name='name'
-                  label='Name'
-                  required
-                  placeholder='Linen shirt'
-                  listeners={{
-                    onChange: ({ value }) => {
-                      if (slugTouchedRef.current) return;
-                      form.setFieldValue('slug', slugifyProductName(String(value ?? '')));
-                    }
-                  }}
-                  validators={{
-                    onBlur: z.string().trim().min(1, 'Name is required')
-                  }}
-                />
+    <div className='mx-auto w-full'>
+      <form.AppForm>
+        <form.Form className='flex flex-col gap-4 p-0'>
+          <div className='grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]'>
+            <div className='flex flex-col gap-4'>
+              <Card>
+                <CardHeader>
+                  <CardTitle className='text-base font-medium'>{pageTitle}</CardTitle>
+                </CardHeader>
+                <CardContent className='flex flex-col gap-5'>
+                  <FormTextField
+                    name='name'
+                    label='Title'
+                    required
+                    placeholder='Linen shirt'
+                    listeners={{
+                      onChange: ({ value }) => {
+                        if (slugTouchedRef.current) return;
+                        form.setFieldValue('slug', slugifyProductName(String(value ?? '')));
+                      }
+                    }}
+                    validators={{
+                      onBlur: z.string().trim().min(1, 'Name is required')
+                    }}
+                  />
+                  <FormTextField
+                    name='slug'
+                    label='URL slug'
+                    required
+                    description='Filled from the product name. Used in admin and storefront URLs.'
+                    placeholder='linen-shirt'
+                    listeners={{
+                      onChange: () => {
+                        slugTouchedRef.current = true;
+                      }
+                    }}
+                    validators={{
+                      onBlur: z
+                        .string()
+                        .trim()
+                        .min(1, 'Slug is required')
+                        .regex(
+                          /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+                          'Use lowercase letters, numbers, and hyphens only'
+                        )
+                    }}
+                  />
+                  <FormTextareaField
+                    name='description'
+                    label='Description'
+                    placeholder='Product description'
+                    rows={5}
+                  />
+                </CardContent>
+              </Card>
 
-                <FormTextField
-                  name='slug'
-                  label='URL slug'
-                  required
-                  description='Filled from the product name. Used in admin and storefront URLs.'
-                  placeholder='linen-shirt'
-                  listeners={{
-                    onChange: () => {
-                      slugTouchedRef.current = true;
-                    }
-                  }}
-                  validators={{
-                    onBlur: z
-                      .string()
-                      .trim()
-                      .min(1, 'Slug is required')
-                      .regex(
-                        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-                        'Use lowercase letters, numbers, and hyphens only'
-                      )
-                  }}
-                />
+              <Card>
+                <CardHeader>
+                  <CardTitle className='text-base font-medium'>Pricing</CardTitle>
+                </CardHeader>
+                <CardContent className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
+                  <FormTextField
+                    name='price'
+                    label='Price'
+                    required
+                    type='number'
+                    min={0}
+                    step={0.01}
+                    placeholder='0.00'
+                    validators={{
+                      onBlur: z.number({ message: 'Price is required' }).nonnegative()
+                    }}
+                  />
+                  <FormTextField
+                    name='compare_at_price'
+                    label='Compare at price'
+                    type='number'
+                    min={0}
+                    step={0.01}
+                    placeholder='Optional'
+                  />
+                </CardContent>
+              </Card>
 
-                <FormSelectField
-                  name='category_id'
-                  label='Category'
-                  options={categoryOptions}
-                  placeholder='Select category'
-                />
+              <Card>
+                <CardHeader>
+                  <CardTitle className='text-base font-medium'>Details</CardTitle>
+                </CardHeader>
+                <CardContent className='flex flex-col gap-5'>
+                  <FormTextField name='product_type' label='Product type' placeholder='Shirts' />
+                  <FormSelectField
+                    name='badge'
+                    label='Badge'
+                    options={badgeOptions}
+                    placeholder='None'
+                  />
+                  <div className='grid grid-cols-1 gap-5 sm:grid-cols-3'>
+                    <FormTextareaField
+                      name='composition'
+                      label='Composition'
+                      placeholder='100% linen'
+                      rows={3}
+                    />
+                    <FormTextareaField name='care' label='Care' placeholder='Cold wash' rows={3} />
+                    <FormTextareaField
+                      name='size_fit'
+                      label='Size & fit'
+                      placeholder='True to size'
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-                <FormTextField name='product_type' label='Product type' placeholder='Shirts' />
+              {initialData ? <ProductNestedSections product={initialData} /> : null}
 
-                <FormSelectField
-                  name='badge'
-                  label='Badge'
-                  options={badgeOptions}
-                  placeholder='None'
-                />
+              {!initialData ? (
+                <p className='text-muted-foreground text-sm'>
+                  After creating the product you can add images, colors, and variants.
+                </p>
+              ) : null}
+            </div>
 
-                <FormSelectField
-                  name='status'
-                  label='Status'
-                  required
-                  options={statusOptions}
-                  placeholder='Select status'
-                />
+            <aside className='flex flex-col gap-4 lg:sticky lg:top-16'>
+              <Card>
+                <CardHeader>
+                  <CardTitle className='text-base font-medium'>Organization</CardTitle>
+                </CardHeader>
+                <CardContent className='flex flex-col gap-5'>
+                  <FormSelectField
+                    name='status'
+                    label='Status'
+                    required
+                    options={statusOptions}
+                    placeholder='Select status'
+                  />
+                  <FormSelectField
+                    name='category_id'
+                    label='Category'
+                    options={categoryOptions}
+                    placeholder='Select category'
+                  />
+                  <FormSwitchField name='featured' label='Featured product' />
+                </CardContent>
+              </Card>
 
-                <FormTextField
-                  name='price'
-                  label='Price'
-                  required
-                  type='number'
-                  min={0}
-                  step={0.01}
-                  placeholder='0.00'
-                  validators={{
-                    onBlur: z.number({ message: 'Price is required' }).nonnegative()
-                  }}
-                />
-
-                <FormTextField
-                  name='compare_at_price'
-                  label='Compare at price'
-                  type='number'
-                  min={0}
-                  step={0.01}
-                  placeholder='Optional'
-                />
-              </div>
-
-              <FormSwitchField name='featured' label='Featured product' />
-
-              <FormTextareaField
-                name='description'
-                label='Description'
-                placeholder='Product description'
-                rows={4}
-              />
-
-              <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-                <FormTextareaField
-                  name='composition'
-                  label='Composition'
-                  placeholder='100% linen'
-                  rows={3}
-                />
-                <FormTextareaField name='care' label='Care' placeholder='Cold wash' rows={3} />
-                <FormTextareaField
-                  name='size_fit'
-                  label='Size & fit'
-                  placeholder='True to size'
-                  rows={3}
-                />
-              </div>
-
-              <div className='flex justify-end gap-2'>
+              <div className='bg-card flex justify-end gap-2 rounded-lg border p-3'>
                 <Button type='button' variant='outline' onClick={() => router.back()}>
                   Back
                 </Button>
-                <form.SubmitButton>{isEdit ? 'Save product' : 'Create product'}</form.SubmitButton>
+                <form.SubmitButton>{isEdit ? 'Save' : 'Create product'}</form.SubmitButton>
               </div>
-            </form.Form>
-          </form.AppForm>
-        </CardContent>
-      </Card>
-
-      {initialData ? <ProductNestedSections product={initialData} /> : null}
-
-      {!initialData ? (
-        <p className='text-muted-foreground text-sm'>
-          After creating the product you can add images, colors, and variants.
-        </p>
-      ) : null}
+            </aside>
+          </div>
+        </form.Form>
+      </form.AppForm>
     </div>
   );
 }

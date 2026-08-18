@@ -15,4 +15,12 @@ export const categoryMutationSchema = z.object({
   sort_order: z.number().int().min(0).optional()
 });
 
-export type CategoryMutationInput = z.infer<typeof categoryMutationSchema>;
+export const categoryFormSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(120),
+  slug: slugSchema,
+  image_url: z.string().trim().max(2000),
+  image_public_id: z.string().trim().max(255),
+  sort_order: z.number({ message: 'Sort order is required' }).int().min(0)
+});
+
+export type CategoryFormValues = z.input<typeof categoryFormSchema>;

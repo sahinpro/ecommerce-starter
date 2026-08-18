@@ -78,6 +78,35 @@ export async function getCategories(): Promise<Category[]> {
   return (data ?? []) as Category[];
 }
 
+export type AdminCategory = Category & { product_count: number };
+
+export async function getAdminCategories(): Promise<AdminCategory[]> {
+  const supabase = getSupabase();
+  const [categoriesResult, productsResult] = await Promise.all([
+    supabase.from('categories').select('*').order('sort_order', { ascending: true }),
+    supabase.from('products').select('category_id').is('deleted_at', null)
+  ]);
+
+  if (categoriesResult.error) {
+    throw catalogError('Failed to list categories', categoriesResult.error);
+  }
+  if (productsResult.error) {
+    throw catalogError('Failed to count category products', productsResult.error);
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of productsResult.data ?? []) {
+    const categoryId = (row as { category_id: string | null }).category_id;
+    if (!categoryId) continue;
+    counts.set(categoryId, (counts.get(categoryId) ?? 0) + 1);
+  }
+
+  return ((categoriesResult.data ?? []) as Category[]).map((category) => ({
+    ...category,
+    product_count: counts.get(category.id) ?? 0
+  }));
+}
+
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const supabase = getSupabase();
   const { data, error } = await supabase

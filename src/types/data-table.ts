@@ -12,6 +12,8 @@ declare module '@tanstack/react-table' {
     range?: [number, number];
     unit?: string;
     icon?: React.FC<React.SVGProps<SVGSVGElement>>;
+    /** Shrink the column to its contents instead of filling leftover table width. */
+    shrink?: boolean;
   }
 }
 

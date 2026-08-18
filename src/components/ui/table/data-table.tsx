@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { getCommonPinningStyles } from '@/lib/data-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>;
@@ -20,10 +21,10 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
 
 export function DataTable<TData>({ table, actionBar, children }: DataTableProps<TData>) {
   return (
-    <div className='flex flex-1 flex-col space-y-4'>
+    <div className='flex flex-1 flex-col gap-3'>
       {children}
       <div className='relative flex flex-1'>
-        <div className='absolute inset-0 flex overflow-hidden rounded-lg border'>
+        <div className='bg-card absolute inset-0 flex overflow-hidden rounded-lg border'>
           <ScrollArea className='h-full w-full'>
             <Table>
               <TableHeader className='bg-muted sticky top-0 z-10'>
@@ -33,6 +34,9 @@ export function DataTable<TData>({ table, actionBar, children }: DataTableProps<
                       <TableHead
                         key={header.id}
                         colSpan={header.colSpan}
+                        className={cn(
+                          header.column.columnDef.meta?.shrink && 'w-[1%] whitespace-nowrap'
+                        )}
                         style={{
                           ...getCommonPinningStyles({ column: header.column })
                         }}
@@ -52,6 +56,9 @@ export function DataTable<TData>({ table, actionBar, children }: DataTableProps<
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
+                          className={cn(
+                            cell.column.columnDef.meta?.shrink && 'w-[1%] whitespace-nowrap'
+                          )}
                           style={{
                             ...getCommonPinningStyles({ column: cell.column })
                           }}
@@ -75,8 +82,8 @@ export function DataTable<TData>({ table, actionBar, children }: DataTableProps<
         </div>
       </div>
       <div className='flex flex-col gap-2.5'>
+        {actionBar && table.getFilteredSelectedRowModel().rows.length > 0 ? actionBar : null}
         <DataTablePagination table={table} />
-        {actionBar && table.getFilteredSelectedRowModel().rows.length > 0 && actionBar}
       </div>
     </div>
   );

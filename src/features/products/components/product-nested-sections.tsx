@@ -18,6 +18,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { MediaPickerDialog } from '@/features/media';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { stockStatusLabel } from '@/features/orders/constants';
 
 import {
   addProductColorMutation,
@@ -28,9 +30,6 @@ import {
   setPrimaryProductImageMutation,
   upsertProductVariantMutation
 } from '../api/mutations';
-import { stockStatusLabel } from '@/features/orders/constants';
-import { cn } from '@/lib/utils';
-
 import type { Product } from '../api/types';
 import { formatProductPrice } from '../constants/product-options';
 
@@ -356,15 +355,18 @@ function ProductVariantsSection({ product }: { product: Product }) {
                     <p className='text-muted-foreground text-xs'>
                       {formatProductPrice(variant.price)}
                     </p>
-                    <p
-                      className={cn(
-                        'text-xs font-medium',
-                        status.tone === 'out' && 'text-destructive',
-                        status.tone === 'low' && 'text-amber-600',
-                        status.tone === 'ok' && 'text-emerald-700'
-                      )}
-                    >
-                      {status.label} · {variant.stock_quantity} units
+                    <p className='text-xs'>
+                      <StatusBadge
+                        tone={
+                          status.tone === 'out'
+                            ? 'danger'
+                            : status.tone === 'low'
+                              ? 'warning'
+                              : 'success'
+                        }
+                      >
+                        {status.label} · {variant.stock_quantity}
+                      </StatusBadge>
                     </p>
                   </div>
                   <div className='flex flex-wrap items-end gap-2'>

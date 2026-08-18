@@ -1,8 +1,8 @@
 /**
- * Dashboard default theme (WhatsApp). Storefront uses Sukoon via StorefrontTheme
- * and is intentionally omitted from the dashboard theme gallery.
+ * Dashboard default theme (Shopify-style admin). Storefront uses Sukoon via
+ * StorefrontTheme and is intentionally omitted from the dashboard theme gallery.
  */
-export const DEFAULT_THEME = 'whatsapp';
+export const DEFAULT_THEME = 'admin';
 export const STOREFRONT_THEME = 'sukoon';
 
 /** All valid `data-theme` values for cookie / SSR validation. */

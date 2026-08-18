@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import * as React from 'react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -31,7 +30,6 @@ import {
 } from '@/components/ui/sidebar';
 import { UserAvatarProfile } from '@/components/user-avatar-profile';
 import { navGroups } from '@/config/nav-config';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import { signOutAdmin } from '@/lib/auth/actions';
 import type { AdminProfile } from '@/lib/auth/types';
 
@@ -44,11 +42,6 @@ type AppSidebarProps = {
 
 export default function AppSidebar({ user }: AppSidebarProps) {
   const pathname = usePathname();
-  const { isOpen } = useMediaQuery();
-
-  React.useEffect(() => {
-    // Side effects based on sidebar state changes
-  }, [isOpen]);
 
   return (
     <Sidebar collapsible='icon'>
@@ -58,7 +51,11 @@ export default function AppSidebar({ user }: AppSidebarProps) {
       <SidebarContent className='overflow-x-hidden'>
         {navGroups.map((group) => (
           <SidebarGroup key={group.label || 'ungrouped'} className='py-0'>
-            {group.label ? <SidebarGroupLabel>{group.label}</SidebarGroupLabel> : null}
+            {group.label ? (
+              <SidebarGroupLabel className='text-muted-foreground h-7 px-2 text-[11px] font-medium tracking-wider uppercase'>
+                {group.label}
+              </SidebarGroupLabel>
+            ) : null}
             <SidebarMenu>
               {group.items.map((item) => {
                 const Icon = item.icon ? Icons[item.icon] : Icons.logo;
@@ -101,7 +98,8 @@ export default function AppSidebar({ user }: AppSidebarProps) {
                     <SidebarMenuButton
                       render={<Link href={item.url} aria-label={item.title} />}
                       tooltip={item.title}
-                      isActive={pathname === item.url}
+                      isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}
+                      className='rounded-lg'
                     >
                       <Icon />
                       <span>{item.title}</span>

@@ -2,6 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 
 import {
   getAdminProducts,
+  getAdminCategories,
   getCategories,
   getCategoryBySlug,
   getCategoryNavChildren,
@@ -17,6 +18,7 @@ import type { ProductFilters } from './types';
 export const catalogKeys = {
   all: ['catalog'] as const,
   categories: () => [...catalogKeys.all, 'categories'] as const,
+  adminCategories: () => [...catalogKeys.all, 'admin-categories'] as const,
   category: (slug: string) => [...catalogKeys.all, 'category', slug] as const,
   navChildren: (slug: string) => [...catalogKeys.all, 'nav-children', slug] as const,
   products: (filters: ProductFilters) => [...catalogKeys.all, 'products', filters] as const,
@@ -32,6 +34,12 @@ export const categoriesQueryOptions = () =>
   queryOptions({
     queryKey: catalogKeys.categories(),
     queryFn: getCategories
+  });
+
+export const adminCategoriesQueryOptions = () =>
+  queryOptions({
+    queryKey: catalogKeys.adminCategories(),
+    queryFn: getAdminCategories
   });
 
 export const categoryQueryOptions = (slug: string) =>

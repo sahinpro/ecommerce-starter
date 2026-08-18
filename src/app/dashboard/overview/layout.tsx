@@ -3,18 +3,21 @@ import Link from 'next/link';
 import PageContainer from '@/components/layout/page-container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LOW_STOCK_THRESHOLD } from '@/features/orders/constants';
-import { listOrders } from '@/features/orders/service';
+import { getStoreSettings, listOrders } from '@/features/orders/service';
 import { formatMoney } from '@/lib/format-money';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 async function getOverviewStats() {
   const supabase = await createSupabaseServerClient();
 
-  const [ordersResult, productsResult, variantsResult] = await Promise.all([
+  const [ordersResult, productsResult, variantsResult, settings] = await Promise.all([
     listOrders({ page: 1, limit: 5 }).catch(() => ({ items: [], total_items: 0 })),
     supabase.from('products').select('id', { count: 'exact', head: true }).is('deleted_at', null),
-    supabase.from('product_variants').select('id, stock_quantity, sku')
+    supabase.from('product_variants').select('id, stock_quantity, sku'),
+    getStoreSettings().catch(() => null)
   ]);
+
+  const lowStockThreshold = settings?.low_stock_threshold || LOW_STOCK_THRESHOLD;
 
   const variants = (variantsResult.data ?? []) as {
     id: string;
@@ -23,7 +26,7 @@ async function getOverviewStats() {
   }[];
 
   const lowStock = variants.filter(
-    (v) => v.stock_quantity > 0 && v.stock_quantity <= LOW_STOCK_THRESHOLD
+    (v) => v.stock_quantity > 0 && v.stock_quantity <= lowStockThreshold
   );
   const outOfStock = variants.filter((v) => v.stock_quantity <= 0);
   const salesTotal = ordersResult.items.reduce((sum, order) => sum + order.total, 0);
@@ -34,7 +37,8 @@ async function getOverviewStats() {
     productCount: productsResult.count ?? 0,
     lowStock,
     outOfStock,
-    salesTotal
+    salesTotal,
+    lowStockThreshold
   };
 }
 
@@ -60,7 +64,7 @@ export default async function OverViewLayout({ children }: { children: React.Rea
     {
       label: 'Out of stock SKUs',
       value: String(stats.outOfStock.length),
-      hint: `${stats.lowStock.length} low-stock (≤ ${LOW_STOCK_THRESHOLD}).`
+      hint: `${stats.lowStock.length} low-stock (≤ ${stats.lowStockThreshold}).`
     }
   ] as const;
 
@@ -68,15 +72,15 @@ export default async function OverViewLayout({ children }: { children: React.Rea
     <PageContainer>
       <div className='flex flex-1 flex-col space-y-2'>
         <div className='flex items-center justify-between'>
-          <h2 className='text-2xl font-bold tracking-tight'>Dashboard</h2>
+          <h2 className='text-xl font-medium tracking-tight'>Dashboard</h2>
         </div>
 
-        <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs md:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
           {metrics.map((metric) => (
             <Card key={metric.label} className='@container/card'>
               <CardHeader>
                 <CardDescription>{metric.label}</CardDescription>
-                <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
+                <CardTitle className='text-2xl font-semibold tabular-nums'>
                   {metric.value}
                 </CardTitle>
               </CardHeader>

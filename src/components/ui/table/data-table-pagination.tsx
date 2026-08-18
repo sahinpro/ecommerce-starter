@@ -1,5 +1,5 @@
-import type { Table } from '@tanstack/react-table';
 import { Icons } from '@/components/icons';
+import type { Table } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +25,7 @@ export function DataTablePagination<TData>({
   return (
     <div
       className={cn(
-        'flex w-full flex-wrap items-center justify-between gap-2 overflow-auto p-1 sm:gap-8',
+        'flex w-full flex-wrap items-center justify-end gap-2 overflow-auto p-1 sm:justify-between sm:gap-8',
         className
       )}
       {...props}
@@ -49,7 +49,7 @@ export function DataTablePagination<TData>({
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className='h-8 w-[4.5rem] [&[data-size]]:h-8'>
+            <SelectTrigger className='h-8 w-18 data-size:h-8'>
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side='top'>

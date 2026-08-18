@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <DashboardTheme />
       <SidebarProvider defaultOpen={defaultOpen}>
         <AppSidebar user={admin} />
-        <SidebarInset>
+        <SidebarInset className='bg-background'>
           <Header />
           <InfobarProvider defaultOpen={false}>
             {children}

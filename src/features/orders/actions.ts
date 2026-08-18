@@ -1,9 +1,10 @@
 'use server';
 
 import { placeCodOrderSchema } from './schemas/checkout';
+import { storeSettingsSchema } from './schemas/settings';
 import { isOrderStatus, type OrderStatus } from './constants';
-import { placeCodOrder, updateOrderStatus } from './service';
-import type { PlaceCodOrderResult } from './types';
+import { placeCodOrder, updateOrderStatus, updateStoreSettings } from './service';
+import type { PlaceCodOrderResult, StoreSettings } from './types';
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -55,6 +56,26 @@ export async function updateOrderStatusAction(
     return {
       ok: false,
       error: error instanceof Error ? error.message : 'Could not update order'
+    };
+  }
+}
+
+export async function updateStoreSettingsAction(
+  raw: unknown
+): Promise<ActionResult<StoreSettings>> {
+  const parsed = storeSettingsSchema.safeParse(raw);
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]?.message ?? 'Invalid settings';
+    return { ok: false, error: first };
+  }
+
+  try {
+    const data = await updateStoreSettings(parsed.data);
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not update settings'
     };
   }
 }

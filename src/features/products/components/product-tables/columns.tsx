@@ -1,12 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import type { Column, ColumnDef } from '@tanstack/react-table';
 
 import { Icons } from '@/components/icons';
-import { Badge } from '@/components/ui/badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { DataTableColumnHeader } from '@/components/ui/table/data-table-column-header';
+import { getSelectColumn } from '@/components/ui/table/data-table-select-column';
+import { TableImage } from '@/components/ui/table/table-image';
 
 import type { Product } from '../../api/types';
 import {
@@ -20,38 +21,26 @@ type CategoryOption = { label: string; value: string };
 
 export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<Product>[] {
   return [
+    getSelectColumn<Product>(),
     {
       id: 'image',
       accessorFn: (row) => row.images[0]?.url ?? '',
       header: 'Image',
       enableSorting: false,
+      size: 56,
+      minSize: 56,
+      maxSize: 56,
+      meta: { shrink: true },
       cell: ({ row }) => {
         const image = row.original.images[0];
-        if (!image?.url) {
-          return (
-            <div className='bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-md'>
-              <Icons.media className='size-4' />
-            </div>
-          );
-        }
-        return (
-          <div className='relative size-12 overflow-hidden rounded-md border'>
-            <Image
-              src={image.url}
-              alt={image.alt || row.original.name}
-              fill
-              sizes='48px'
-              className='object-cover'
-            />
-          </div>
-        );
+        return <TableImage src={image?.url} alt={image?.alt || row.original.name} />;
       }
     },
     {
       id: 'name',
       accessorKey: 'name',
       header: ({ column }: { column: Column<Product, unknown> }) => (
-        <DataTableColumnHeader column={column} title='Name' />
+        <DataTableColumnHeader column={column} title='Product' />
       ),
       cell: ({ row }) => (
         <div className='max-w-55'>
@@ -79,7 +68,9 @@ export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<
       header: ({ column }: { column: Column<Product, unknown> }) => (
         <DataTableColumnHeader column={column} title='Category' />
       ),
-      cell: ({ row }) => <span className='text-sm'>{row.original.category_name ?? '—'}</span>,
+      cell: ({ row }) => (
+        <span className='text-muted-foreground text-sm'>{row.original.category_name ?? '—'}</span>
+      ),
       enableColumnFilter: true,
       meta: {
         label: 'Category',
@@ -93,7 +84,9 @@ export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<
       header: ({ column }: { column: Column<Product, unknown> }) => (
         <DataTableColumnHeader column={column} title='Price' />
       ),
-      cell: ({ row }) => formatProductPrice(row.original.price)
+      cell: ({ row }) => (
+        <span className='tabular-nums'>{formatProductPrice(row.original.price)}</span>
+      )
     },
     {
       id: 'status',
@@ -102,18 +95,25 @@ export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<
       header: ({ column }: { column: Column<Product, unknown> }) => (
         <DataTableColumnHeader column={column} title='Status' />
       ),
-      cell: ({ row }) => (
-        <Badge variant='outline' className='capitalize'>
-          {row.original.status}
-        </Badge>
-      )
+      cell: ({ row }) => <StatusBadge status={row.original.status} />
     },
     {
       id: 'stock',
       accessorFn: (row) => sumVariantStock(row.variants),
       enableSorting: false,
       header: 'Stock',
-      cell: ({ row }) => sumVariantStock(row.original.variants)
+      cell: ({ row }) => {
+        const stock = sumVariantStock(row.original.variants);
+        const tone = stock <= 0 ? 'danger' : stock <= 5 ? 'warning' : 'success';
+        return (
+          <div className='flex items-center gap-2'>
+            <span className='tabular-nums'>{stock}</span>
+            {stock <= 5 ? (
+              <StatusBadge tone={tone}>{stock <= 0 ? 'Out' : 'Low'}</StatusBadge>
+            ) : null}
+          </div>
+        );
+      }
     },
     {
       id: 'created_at',
@@ -121,10 +121,18 @@ export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<
       header: ({ column }: { column: Column<Product, unknown> }) => (
         <DataTableColumnHeader column={column} title='Created' />
       ),
-      cell: ({ row }) => formatProductDate(row.original.created_at)
+      cell: ({ row }) => (
+        <span className='text-muted-foreground'>{formatProductDate(row.original.created_at)}</span>
+      )
     },
     {
       id: 'actions',
+      size: 48,
+      minSize: 48,
+      maxSize: 48,
+      enableSorting: false,
+      enableHiding: false,
+      meta: { shrink: true },
       cell: ({ row }) => <CellAction data={row.original} />
     }
   ];

@@ -2,7 +2,7 @@
 
 Premium cloth e-commerce: **guest storefront** + **admin dashboard** in one Next.js app.
 
-## Architecture (approved)
+## Architecture
 
 ```
 Next.js (App Router)
@@ -18,7 +18,7 @@ Storefront
   → Cart: localStorage `sukoon-cart`
   → Wishlist: localStorage `sukoon-wishlist`
 
-Catalog collections (FINAL)
+Catalog collections
   → Palestine · Sukoon · Sabr · Tawakkul · Brotherhood
 ```
 
@@ -33,7 +33,7 @@ bun run dev          # http://localhost:3000
 
 Admin: create a user in Supabase Auth, then open `/admin/sign-in`.
 
-SQL: run migrations under `supabase/migrations/` in order via Supabase SQL Editor (see `.env.example`).
+SQL: apply [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL editor for a new environment. Existing databases can apply the additive files in [`supabase/migrations/`](./supabase/migrations/) instead. Do not replace a live `place_cod_order` function if checkout already works.
 
 ## Scripts
 
@@ -55,13 +55,11 @@ SQL: run migrations under `supabase/migrations/` in order via Supabase SQL Edito
 
 | Doc | Purpose |
 |-----|---------|
-| [docs/phase5-collections-audit.md](./docs/phase5-collections-audit.md) | Current collection IA |
-| [docs/phase5-p0-collection-loop-report.md](./docs/phase5-p0-collection-loop-report.md) | Catalog loop verification |
-| [docs/production-cleanup-report.md](./docs/production-cleanup-report.md) | Cleanup / deploy readiness |
 | [AGENTS.md](./AGENTS.md) | Agent conventions (dashboard patterns) |
+| [CLAUDE.md](./CLAUDE.md) | Project conventions |
+| [supabase/schema.sql](./supabase/schema.sql) | Current database schema |
 
 ## Notes
 
 - Clerk is **not** used. Auth is Supabase only.
-- Homepage still has temporary cashmere marketing copy — see production cleanup report (P1 content).
-- Dashboard Customers page still uses mock user data until orders/customers are connected.
+- Storefront checkout is Cash on Delivery only. No payment gateway and no customer accounts.

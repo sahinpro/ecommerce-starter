@@ -6,8 +6,8 @@ import { useThemeConfig } from './active-theme';
 import { DEFAULT_THEME } from './theme.config';
 
 /**
- * Scopes the admin shell to the WhatsApp theme tokens.
- * Light/dark mode is left to next-themes + ThemeModeToggle (starter behavior).
+ * Scopes the admin shell to the dashboard theme tokens.
+ * Light/dark mode is left to next-themes + ThemeModeToggle.
  */
 export function DashboardTheme() {
   const { setActiveTheme } = useThemeConfig();

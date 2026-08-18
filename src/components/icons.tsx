@@ -9,6 +9,7 @@ import {
   IconBox,
   IconBrightness,
   IconCalendar,
+  IconCategory,
   IconCheck,
   IconChecks,
   IconChevronDown,
@@ -119,6 +120,7 @@ export const Icons = {
 
   // Layout
   dashboard: IconLayoutDashboard,
+  category: IconCategory,
   panelLeft: IconLayoutSidebar,
   menu: IconMenu2,
 

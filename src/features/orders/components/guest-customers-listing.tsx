@@ -27,7 +27,7 @@ export async function GuestCustomersListing() {
 
   if (customers.length === 0) {
     return (
-      <div className='text-muted-foreground rounded-md border border-dashed p-10 text-center text-sm'>
+      <div className='bg-card text-muted-foreground rounded-lg border border-dashed p-10 text-center text-sm'>
         No guest customers yet. When a COD order is placed, the buyer&apos;s name, phone, and
         address will appear here.
       </div>
@@ -39,7 +39,7 @@ export async function GuestCustomersListing() {
       <p className='text-muted-foreground text-sm'>
         {customers.length} guest customer(s) from COD orders
       </p>
-      <div className='rounded-md border'>
+      <div className='bg-card rounded-lg border'>
         <Table>
           <TableHeader>
             <TableRow>

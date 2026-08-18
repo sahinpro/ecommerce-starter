@@ -44,3 +44,6 @@ next-env.d.ts
 # cursor
 .cursorrules
 /memory-bank
+
+# leftover Clerk CLI artifacts (auth is Supabase)
+.clerk/

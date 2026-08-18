@@ -1,7 +1,7 @@
 import { NavGroup } from '@/types';
 
 /**
- * Sukoon admin navigation (Phase 1 — cleaned starter shell)
+ * Sukoon admin navigation.
  */
 export const navGroups: NavGroup[] = [
   {
@@ -14,12 +14,25 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         shortcut: ['d', 'd'],
         items: []
-      },
+      }
+    ]
+  },
+  {
+    label: 'Catalog',
+    items: [
       {
         title: 'Products',
         url: '/dashboard/product',
         icon: 'product',
         shortcut: ['p', 'p'],
+        isActive: false,
+        items: []
+      },
+      {
+        title: 'Categories',
+        url: '/dashboard/categories',
+        icon: 'category',
+        shortcut: ['c', 'c'],
         isActive: false,
         items: []
       },
@@ -30,7 +43,12 @@ export const navGroups: NavGroup[] = [
         shortcut: ['m', 'm'],
         isActive: false,
         items: []
-      },
+      }
+    ]
+  },
+  {
+    label: 'Orders',
+    items: [
       {
         title: 'Orders',
         url: '/dashboard/orders',
@@ -44,6 +62,19 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/customers',
         icon: 'teams',
         shortcut: ['u', 'u'],
+        isActive: false,
+        items: []
+      }
+    ]
+  },
+  {
+    label: 'Settings',
+    items: [
+      {
+        title: 'Settings',
+        url: '/dashboard/settings',
+        icon: 'settings',
+        shortcut: ['s', 's'],
         isActive: false,
         items: []
       }

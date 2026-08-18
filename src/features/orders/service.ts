@@ -97,6 +97,29 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   };
 }
 
+export async function updateStoreSettings(
+  input: Partial<
+    Pick<StoreSettings, 'shipping_cost' | 'free_shipping_threshold' | 'low_stock_threshold'>
+  >
+): Promise<StoreSettings> {
+  await requireAdminUser();
+  const supabase = await createSupabaseServerClient();
+
+  const payload: Record<string, unknown> = {
+    updated_at: new Date().toISOString()
+  };
+  if (input.shipping_cost != null) payload.shipping_cost = input.shipping_cost;
+  if (input.free_shipping_threshold !== undefined) {
+    payload.free_shipping_threshold = input.free_shipping_threshold;
+  }
+  if (input.low_stock_threshold != null) payload.low_stock_threshold = input.low_stock_threshold;
+
+  const { error } = await supabase.from('store_settings').update(payload).eq('id', 1);
+  if (error) throw new Error(error.message);
+
+  return getStoreSettings();
+}
+
 export async function placeCodOrder(input: PlaceCodOrderInput): Promise<PlaceCodOrderResult> {
   const admin = createSupabaseAdminClient();
 
