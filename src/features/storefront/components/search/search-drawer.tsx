@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Icons } from '@/components/icons';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { FIGMA_PRIMARY_CATEGORIES } from '@/features/catalog/figma-taxonomy';
+import { resolvedNavQueryOptions } from '@/features/navigation/api/queries';
 import { useDebounce } from '@/hooks/use-debounce';
 
 import { productsQueryOptions } from '../../api/queries';
@@ -33,6 +33,11 @@ export function SearchDrawer({ open, onOpenChange }: SearchDrawerProps) {
     enabled: open && canSearch,
     placeholderData: keepPreviousData
   });
+  const { data: mainNav = [] } = useQuery({
+    ...resolvedNavQueryOptions('main-menu'),
+    enabled: open
+  });
+  const collectionLinks = mainNav.filter((item) => item.categorySlug);
 
   const products = data?.products ?? [];
 
@@ -88,9 +93,14 @@ export function SearchDrawer({ open, onOpenChange }: SearchDrawerProps) {
         <div className='overflow-y-auto px-5 py-6 md:px-10'>
           <p className='text-[11px] tracking-[0.28px] uppercase'>Collections</p>
           <nav className='mt-3 flex flex-wrap gap-x-6 gap-y-2 text-[13px] tracking-[0.26px] uppercase'>
-            {FIGMA_PRIMARY_CATEGORIES.map((item) => (
-              <Link key={item.slug} href={item.href} onClick={close} className='hover:opacity-60'>
-                {item.name}
+            {collectionLinks.map((item) => (
+              <Link
+                key={item.id ?? item.categorySlug}
+                href={item.href}
+                onClick={close}
+                className='hover:opacity-60'
+              >
+                {item.label}
               </Link>
             ))}
             <Link href='/shop' onClick={close} className='hover:opacity-60'>

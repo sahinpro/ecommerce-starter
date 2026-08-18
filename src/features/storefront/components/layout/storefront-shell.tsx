@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+
 import { StorefrontTheme } from '@/components/themes/storefront-theme';
 
 import { StorefrontFooter } from './storefront-footer';
@@ -11,9 +13,13 @@ export function StorefrontShell({ children }: StorefrontShellProps) {
   return (
     <div className='bg-background text-foreground relative min-h-screen font-sans'>
       <StorefrontTheme />
-      <StorefrontHeader />
+      <Suspense fallback={null}>
+        <StorefrontHeader />
+      </Suspense>
       <main>{children}</main>
-      <StorefrontFooter />
+      <Suspense fallback={null}>
+        <StorefrontFooter />
+      </Suspense>
     </div>
   );
 }

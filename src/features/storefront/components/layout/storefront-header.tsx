@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { useSuspenseQuery } from '@tanstack/react-query';
+
 import { Icons } from '@/components/icons';
-import { PRIMARY_NAV } from '@/features/catalog/constants';
 import type { NavPrimaryItem } from '@/features/catalog/types';
+import { resolvedNavQueryOptions } from '@/features/navigation/api/queries';
 import { cn } from '@/lib/utils';
 
 import { useCartStore } from '../../utils/cart-store';
@@ -124,6 +126,7 @@ type HeaderChromeProps = {
   toolsProps: Omit<HeaderToolsProps, 'inverted'>;
   onMenuToggle: () => void;
   onNavItemHover: (item: NavPrimaryItem) => void;
+  primaryNav: NavPrimaryItem[];
 };
 
 function HeaderChrome({
@@ -134,7 +137,8 @@ function HeaderChrome({
   onAnnouncementDismiss,
   toolsProps,
   onMenuToggle,
-  onNavItemHover
+  onNavItemHover,
+  primaryNav
 }: HeaderChromeProps) {
   return (
     <>
@@ -169,9 +173,9 @@ function HeaderChrome({
             menuOpen && 'pointer-events-none opacity-0'
           )}
         >
-          {PRIMARY_NAV.map((item) => (
+          {primaryNav.map((item) => (
             <button
-              key={item.label}
+              key={item.id ?? item.label}
               type='button'
               onPointerEnter={(event) => {
                 if (event.pointerType === 'mouse') onNavItemHover(item);
@@ -197,22 +201,26 @@ function HeaderChrome({
 export function StorefrontHeader() {
   const pathname = usePathname();
   const isHome = pathname === '/';
+  const { data: primaryNav } = useSuspenseQuery(resolvedNavQueryOptions('main-menu'));
   const stickyRef = useRef<HTMLElement>(null);
   const lastScrollY = useRef(0);
   const [headerHeight, setHeaderHeight] = useState(96);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showSticky, setShowSticky] = useState(!isHome);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
-  const [activeNav, setActiveNav] = useState<NavPrimaryItem | null>(
-    PRIMARY_NAV.find((item) => item.categorySlug) ?? PRIMARY_NAV[0] ?? null
-  );
+  const [activeLabel, setActiveLabel] = useState<string | null>(null);
+  const activeNav =
+    primaryNav.find((item) => item.label === activeLabel) ??
+    primaryNav.find((item) => item.categorySlug) ??
+    primaryNav[0] ??
+    null;
   const [searchOpen, setSearchOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const cartCount = useCartStore((s) => (s.hasHydrated ? s.itemCount() : 0));
   const wishlistCount = useWishlistStore((s) => (s.hasHydrated ? s.count() : 0));
 
   function openMenu(item?: NavPrimaryItem) {
-    if (item) setActiveNav(item);
+    if (item) setActiveLabel(item.label);
     setMenuOpen(true);
     if (!isHome || window.scrollY > SHOW_AFTER_TOP) setShowSticky(true);
   }
@@ -309,7 +317,8 @@ export function StorefrontHeader() {
     onAnnouncementDismiss: () => setAnnouncementVisible(false),
     toolsProps,
     onMenuToggle: toggleMenu,
-    onNavItemHover: openMenu
+    onNavItemHover: openMenu,
+    primaryNav
   };
 
   return (
@@ -342,9 +351,9 @@ export function StorefrontHeader() {
       <StorefrontMegaMenu
         open={menuOpen}
         activeNav={activeNav}
-        onActiveNavChange={setActiveNav}
+        onActiveNavChange={(item) => setActiveLabel(item.label)}
         onClose={() => setMenuOpen(false)}
-        primaryNav={PRIMARY_NAV}
+        primaryNav={primaryNav}
         onSearch={() => {
           setMenuOpen(false);
           setSearchOpen(true);

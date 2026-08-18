@@ -1,15 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useSuspenseQuery } from '@tanstack/react-query';
 
-import { FIGMA_FOOTER_SHOP_LINKS } from '@/features/catalog/figma-taxonomy';
+import { resolvedNavQueryOptions } from '@/features/navigation/api/queries';
+import { isExternalHref, navToFooterLinks } from '@/features/navigation/constants';
 import { cn } from '@/lib/utils';
 
 import { SukoonLogo } from '../brand/sukoon-logo';
 
-const footerLinks: Record<string, readonly { label: string; href: string; external?: boolean }[]> =
-  {
-    Shop: FIGMA_FOOTER_SHOP_LINKS,
+export function StorefrontFooter() {
+  const { data: shopNav } = useSuspenseQuery(resolvedNavQueryOptions('footer'));
+  const shopLinks = navToFooterLinks(shopNav);
+
+  const footerLinks: Record<string, readonly { label: string; href: string }[]> = {
+    Shop: shopLinks,
     Information: [
       { label: 'Shipping & Returns', href: '/shipping' },
       { label: 'Terms & Conditions', href: '/terms-of-service' },
@@ -23,12 +28,10 @@ const footerLinks: Record<string, readonly { label: string; href: string; extern
     ],
     Connect: [
       { label: 'Contact', href: '/contact' },
-      { label: 'Instagram', href: 'https://instagram.com', external: true },
-      { label: 'Facebook', href: 'https://facebook.com', external: true }
+      { label: 'Instagram', href: 'https://instagram.com' },
+      { label: 'Facebook', href: 'https://facebook.com' }
     ]
   };
-
-export function StorefrontFooter() {
   return (
     <footer className='bg-sukoon-footer text-sukoon-black md:min-h-110' data-node-id='1:173'>
       <div className='relative mx-auto grid max-w-480 gap-16 px-4 pt-10 pb-10 lg:grid-cols-[450px_minmax(0,1fr)] lg:gap-17.5 lg:pb-25'>
@@ -93,7 +96,7 @@ export function StorefrontFooter() {
                     <Link
                       href={link.href}
                       className='text-[13px] leading-3.25 tracking-[0.26px] transition-opacity hover:opacity-60'
-                      {...('external' in link && link.external
+                      {...(isExternalHref(link.href)
                         ? { target: '_blank', rel: 'noreferrer' }
                         : {})}
                     >

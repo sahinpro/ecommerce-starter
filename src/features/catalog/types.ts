@@ -172,9 +172,11 @@ export type NavChildLink = {
 };
 
 export type NavPrimaryItem = {
+  id?: string;
   label: string;
   href: string;
   /** Category slug used to resolve secondary links from product_types */
   categorySlug?: string;
+  blurb?: string;
   children?: NavChildLink[];
 };

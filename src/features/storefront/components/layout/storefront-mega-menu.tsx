@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState, type MouseEvent } from 'react';
 
 import { Icons } from '@/components/icons';
-import { getCollectionBlurb } from '@/features/catalog/figma-taxonomy';
 import type { NavChildLink, NavPrimaryItem } from '@/features/catalog/types';
 import { cn } from '@/lib/utils';
 
@@ -114,7 +113,7 @@ export function StorefrontMegaMenu({
                 {primaryNav.map((item) => {
                   const isActive = activeNav?.label === item.label;
                   return (
-                    <div key={item.label} className='relative'>
+                    <div key={item.id ?? item.label} className='relative'>
                       {isActive ? (
                         <span className='bg-sukoon-black absolute top-1/2 -left-3 size-1.5 -translate-y-1/2' />
                       ) : null}
@@ -139,7 +138,7 @@ export function StorefrontMegaMenu({
           <div className='relative' data-menu-level={2}>
             <div className='h-10 shrink-0' aria-hidden />
             <div className='px-10 pt-7'>
-              {activeNav?.categorySlug ? (
+              {activeNav?.children?.length || activeNav?.categorySlug || activeNav?.blurb ? (
                 <div className='flex flex-col gap-5'>
                   <ul className='flex flex-col gap-3 text-[12px] leading-3.25 tracking-[0.26px]'>
                     {children.map((child) => (
@@ -154,9 +153,9 @@ export function StorefrontMegaMenu({
                       </li>
                     ))}
                   </ul>
-                  {getCollectionBlurb(activeNav.categorySlug) ? (
+                  {activeNav?.blurb ? (
                     <p className='text-sukoon-black/55 max-w-60 text-[12px] leading-relaxed tracking-[0.02em]'>
-                      {getCollectionBlurb(activeNav.categorySlug)}
+                      {activeNav.blurb}
                     </p>
                   ) : null}
                 </div>
@@ -232,7 +231,7 @@ export function StorefrontMegaMenu({
             >
               {primaryNav.map((item) => (
                 <button
-                  key={item.label}
+                  key={item.id ?? item.label}
                   type='button'
                   className='flex w-full items-center justify-between text-left text-[17px] tracking-[0.02em]'
                   onClick={(event) => openSubmenu(item, event)}

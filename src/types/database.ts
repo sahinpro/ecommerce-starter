@@ -12,7 +12,28 @@ export interface ProfileRow {
   updated_at: string;
 }
 
-/** Row shape for public.customers (guest store buyers — not Auth users). */
+/** Row shape for public.menus (storefront header/footer navigation). */
+export interface MenuRow {
+  id: string;
+  handle: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MenuItemRow {
+  id: string;
+  menu_id: string;
+  parent_id: string | null;
+  label: string;
+  link_type: 'category' | 'page' | 'url';
+  link_value: string;
+  blurb: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CustomerRow {
   id: string;
   email: string;
@@ -384,6 +405,23 @@ type Tables = {
     Row: StoreSettingsRow;
     Insert: Partial<StoreSettingsRow> & { id?: number };
     Update: Partial<StoreSettingsRow>;
+    Relationships: [];
+  };
+  menus: {
+    Row: MenuRow;
+    Insert: Partial<MenuRow> & { handle: string; title: string };
+    Update: Partial<MenuRow>;
+    Relationships: [];
+  };
+  menu_items: {
+    Row: MenuItemRow;
+    Insert: Partial<MenuItemRow> & {
+      menu_id: string;
+      label: string;
+      link_type: MenuItemRow['link_type'];
+      link_value: string;
+    };
+    Update: Partial<MenuItemRow>;
     Relationships: [];
   };
   orders: {

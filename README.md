@@ -33,7 +33,7 @@ bun run dev          # http://localhost:3000
 
 Admin: create a user in Supabase Auth, then open `/admin/sign-in`.
 
-SQL: apply [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL editor for a new environment. Existing databases can apply the additive files in [`supabase/migrations/`](./supabase/migrations/) instead. Do not replace a live `place_cod_order` function if checkout already works.
+SQL: apply additive files in [`supabase/migrations/`](./supabase/migrations/) in the Supabase SQL editor (orders/settings, then menus). Do not replace a live `place_cod_order` function if checkout already works.
 
 ## Scripts
 
@@ -57,7 +57,7 @@ SQL: apply [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL ed
 |-----|---------|
 | [AGENTS.md](./AGENTS.md) | Agent conventions (dashboard patterns) |
 | [CLAUDE.md](./CLAUDE.md) | Project conventions |
-| [supabase/schema.sql](./supabase/schema.sql) | Current database schema |
+| [supabase/migrations/](./supabase/migrations/) | Additive database migrations |
 
 ## Notes
 
