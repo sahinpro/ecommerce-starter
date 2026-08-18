@@ -34,20 +34,60 @@ export type ProductColor = {
   hex: string;
 };
 
+export type ProductOptionValue = {
+  id: string;
+  option_id: string;
+  name: string;
+  position: number;
+  metadata: Record<string, unknown> | null;
+};
+
+export type ProductOption = {
+  id: string;
+  product_id: string;
+  name: string;
+  position: number;
+  values: ProductOptionValue[];
+};
+
+export type ProductVariantOptionValue = {
+  option_id: string;
+  option_name: string;
+  value_id: string;
+  value_name: string;
+};
+
+export type VariantStatus = 'active' | 'archived';
+
 export type ProductVariant = {
   id: string;
   product_id: string;
   sku: string;
+  barcode: string | null;
   size: string;
   color_id: string | null;
   price: number;
   compare_at_price: number | null;
   stock_quantity: number;
+  status: VariantStatus;
+  option_values: ProductVariantOptionValue[];
+  media_asset_ids: string[];
+};
+
+export type InventoryAdjustment = {
+  id: string;
+  variant_id: string;
+  quantity_delta: number;
+  previous_quantity: number;
+  new_quantity: number;
+  reason: string;
+  created_at: string;
 };
 
 export type Product = {
   id: string;
   slug: string;
+  sku: string;
   name: string;
   description: string | null;
   price: number;
@@ -62,6 +102,7 @@ export type Product = {
   featured: boolean;
   status: ProductStatus;
   images: ProductImage[];
+  options: ProductOption[];
   colors: ProductColor[];
   variants: ProductVariant[];
   /** Derived unique sizes from variants for presentation */
@@ -128,6 +169,7 @@ export type CategoryMutationPayload = {
 export type ProductMutationPayload = {
   name: string;
   slug: string;
+  sku: string;
   description?: string | null;
   price: number;
   compare_at_price?: number | null;
@@ -156,14 +198,41 @@ export type ProductColorMutationPayload = {
   hex: string;
 };
 
+export type ProductOptionMutationPayload = {
+  product_id: string;
+  name: string;
+  position?: number;
+};
+
+export type ProductOptionValueMutationPayload = {
+  option_id: string;
+  name: string;
+  hex?: string | null;
+  position?: number;
+};
+
 export type ProductVariantMutationPayload = {
   product_id: string;
-  sku: string;
-  size: string;
+  sku?: string;
+  size?: string;
   color_id?: string | null;
   price: number;
   compare_at_price?: number | null;
   stock_quantity?: number;
+  barcode?: string | null;
+  status?: VariantStatus;
+  option_value_ids?: string[];
+  variant_id?: string;
+};
+
+export type RemoveOptionValueResult = {
+  removed_variants: number;
+  archived_variants: number;
+};
+
+export type GenerateVariantsResult = {
+  created: number;
+  skipped: number;
 };
 
 export type NavChildLink = {

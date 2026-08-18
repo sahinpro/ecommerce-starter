@@ -20,7 +20,7 @@ export async function OrderDetail({ orderId }: { orderId: string }) {
   if (!order) notFound();
 
   return (
-    <div className='grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]'>
+    <div className='grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]'>
       <div className='flex flex-col gap-4'>
         <div>
           <h2 className='text-xl font-medium tracking-tight'>{order.order_number}</h2>
@@ -31,7 +31,7 @@ export async function OrderDetail({ orderId }: { orderId: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle className='text-base font-medium'>Items</CardTitle>
+            <CardTitle className='text-base leading-6 font-medium'>Items</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -90,24 +90,24 @@ export async function OrderDetail({ orderId }: { orderId: string }) {
       <aside className='flex flex-col gap-4 lg:sticky lg:top-16'>
         <Card>
           <CardHeader>
-            <CardTitle className='text-base font-medium'>Status</CardTitle>
+            <CardTitle className='text-base leading-6 font-medium'>Status</CardTitle>
           </CardHeader>
-          <CardContent className='flex flex-col gap-3'>
+          <CardContent className='flex min-w-0 flex-col gap-4'>
             <div className='flex flex-wrap gap-2'>
               <StatusBadge status={order.order_status} />
               <StatusBadge status={order.payment_status}>
-                {order.payment_method} · {order.payment_status}
+                {order.payment_method.toUpperCase()} · {order.payment_status}
               </StatusBadge>
             </div>
             <OrderStatusForm orderId={order.id} currentStatus={order.order_status} />
-            <p className='text-muted-foreground text-xs'>
+            <p className='text-muted-foreground text-xs leading-5'>
               Cancelling restores stock once. Delivered marks COD payment as paid.
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className='text-base font-medium'>Customer</CardTitle>
+            <CardTitle className='text-base leading-6 font-medium'>Customer</CardTitle>
           </CardHeader>
           <CardContent className='flex flex-col gap-1 text-sm'>
             <p className='font-medium'>{order.customer_name}</p>
@@ -116,7 +116,7 @@ export async function OrderDetail({ orderId }: { orderId: string }) {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className='text-base font-medium'>Delivery</CardTitle>
+            <CardTitle className='text-base leading-6 font-medium'>Delivery</CardTitle>
           </CardHeader>
           <CardContent className='flex flex-col gap-1 text-sm'>
             <p>{order.address}</p>

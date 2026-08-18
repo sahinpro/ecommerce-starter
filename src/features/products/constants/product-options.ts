@@ -10,6 +10,10 @@ export function slugifyProductName(value: string): string {
     .replace(/^-|-$/g, '');
 }
 
+export function skuFromProductName(value: string): string {
+  return slugifyProductName(value).toUpperCase().slice(0, 80);
+}
+
 export function sumVariantStock(
   variants: { stock_quantity?: number | null }[] | undefined
 ): number {

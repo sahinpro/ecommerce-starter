@@ -36,7 +36,10 @@ function mapOrderItem(row: Record<string, unknown>): OrderItem {
     color_snapshot: (row.color_snapshot as string | null) ?? (row.color as string | null) ?? null,
     price_snapshot: price,
     quantity,
-    line_total: num(row.line_total ?? price * quantity)
+    line_total: num(row.line_total ?? price * quantity),
+    option_values_snapshot: Array.isArray(row.option_values_snapshot)
+      ? (row.option_values_snapshot as { name: string; value: string }[])
+      : null
   };
 }
 
@@ -259,7 +262,7 @@ export async function getOrderById(id: string): Promise<Order | null> {
   const { data: items, error: itemsError } = await supabase
     .from('order_items')
     .select(
-      'id, order_id, product_id, variant_id, product_name, product_name_snapshot, sku_snapshot, size, size_snapshot, color, color_snapshot, price, price_snapshot, quantity, line_total'
+      'id, order_id, product_id, variant_id, product_name, product_name_snapshot, sku_snapshot, size, size_snapshot, color, color_snapshot, price, price_snapshot, quantity, line_total, option_values_snapshot'
     )
     .eq('order_id', id);
 

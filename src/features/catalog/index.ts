@@ -15,8 +15,11 @@ export {
   buildFilterOptions,
   findVariant,
   PRODUCT_DETAIL_SELECT,
-  toCatalogProduct
+  toCatalogProduct,
+  variantDisplayName
 } from './adapters';
+export { generateOptionCombinations, combinationLabel } from './variant-engine';
+export { availableQuantity } from './inventory';
 export { categoryMutationSchema } from './schemas/category';
 export {
   productBadgeSchema,

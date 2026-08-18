@@ -50,7 +50,9 @@ export function getProductColumns(categoryOptions: CategoryOption[]): ColumnDef<
           >
             {row.original.name}
           </Link>
-          <p className='text-muted-foreground truncate text-xs'>{row.original.slug}</p>
+          <p className='text-muted-foreground truncate text-xs'>
+            {row.original.sku ? `SKU ${row.original.sku}` : row.original.slug}
+          </p>
         </div>
       ),
       meta: {

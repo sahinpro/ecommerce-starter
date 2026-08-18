@@ -57,6 +57,7 @@ export interface CategoryRow {
 export interface ProductRow {
   id: string;
   slug: string;
+  sku: string;
   name: string;
   description: string | null;
   price: number;
@@ -109,11 +110,15 @@ export interface ProductVariantRow {
   id: string;
   product_id: string;
   sku: string;
+  barcode: string | null;
   size: string;
   color_id: string | null;
   price: number;
   compare_at_price: number | null;
   stock_quantity: number;
+  status: 'active' | 'archived';
+  option_combination_key: string | null;
+  updated_at?: string;
 }
 
 export interface StoreSettingsRow {
@@ -170,6 +175,7 @@ export interface OrderItemRow {
   price_snapshot: number | null;
   quantity: number;
   line_total: number | null;
+  option_values_snapshot?: { name: string; value: string }[] | null;
 }
 
 type Tables = {
@@ -264,6 +270,7 @@ type Tables = {
     Insert: {
       id?: string;
       slug: string;
+      sku: string;
       name: string;
       description?: string | null;
       price: number;
@@ -282,6 +289,7 @@ type Tables = {
     };
     Update: {
       slug?: string;
+      sku?: string;
       name?: string;
       description?: string | null;
       price?: number;
@@ -370,19 +378,25 @@ type Tables = {
       id?: string;
       product_id: string;
       sku: string;
+      barcode?: string | null;
       size: string;
       color_id?: string | null;
       price: number;
       compare_at_price?: number | null;
       stock_quantity?: number;
+      status?: 'active' | 'archived';
+      option_combination_key?: string | null;
     };
     Update: {
       sku?: string;
+      barcode?: string | null;
       size?: string;
       color_id?: string | null;
       price?: number;
       compare_at_price?: number | null;
       stock_quantity?: number;
+      status?: 'active' | 'archived';
+      option_combination_key?: string | null;
     };
     Relationships: [
       {
@@ -469,6 +483,79 @@ export type Database = {
       };
       decrement_variant_stock: {
         Args: { p_variant_id: string; p_quantity: number };
+        Returns: number;
+      };
+      add_product_option: {
+        Args: { p_product_id: string; p_name: string; p_position?: number | null };
+        Returns: unknown;
+      };
+      add_product_option_value: {
+        Args: {
+          p_option_id: string;
+          p_name: string;
+          p_hex?: string | null;
+          p_position?: number | null;
+        };
+        Returns: unknown;
+      };
+      update_product_option_value: {
+        Args: {
+          p_value_id: string;
+          p_name?: string | null;
+          p_hex?: string | null;
+          p_position?: number | null;
+        };
+        Returns: unknown;
+      };
+      preview_option_value_usage: {
+        Args: { p_value_id: string };
+        Returns: unknown;
+      };
+      remove_product_option_value: {
+        Args: { p_value_id: string; p_confirm?: boolean };
+        Returns: unknown;
+      };
+      delete_product_option: {
+        Args: { p_option_id: string; p_confirm?: boolean };
+        Returns: unknown;
+      };
+      generate_product_variants: {
+        Args: { p_product_id: string };
+        Returns: unknown;
+      };
+      upsert_product_variant_full: {
+        Args: {
+          p_product_id: string;
+          p_sku: string;
+          p_option_value_ids: string[];
+          p_price: number;
+          p_compare_at_price?: number | null;
+          p_barcode?: string | null;
+          p_stock_quantity?: number | null;
+          p_status?: string;
+          p_variant_id?: string | null;
+        };
+        Returns: unknown;
+      };
+      archive_or_delete_variant: {
+        Args: { p_variant_id: string };
+        Returns: unknown;
+      };
+      set_variant_inventory: {
+        Args: {
+          p_variant_id: string;
+          p_on_hand: number;
+          p_reason?: string;
+          p_actor_id?: string | null;
+        };
+        Returns: number;
+      };
+      set_variant_media: {
+        Args: { p_variant_id: string; p_media_asset_ids: string[] };
+        Returns: undefined;
+      };
+      variant_available_quantity: {
+        Args: { p_variant_id: string };
         Returns: number;
       };
     };

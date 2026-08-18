@@ -18,6 +18,7 @@ const slugSchema = z
 export const productFormSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200),
   slug: slugSchema,
+  sku: z.string().trim().min(1, 'SKU is required').max(80),
   description: z.string().trim().max(10000),
   category_id: z.union([postgresUuidSchema('Select a category'), z.literal('')]),
   product_type: z.string().trim().max(80),

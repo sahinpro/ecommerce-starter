@@ -12,6 +12,7 @@ import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
 import {
   PRODUCT_BADGE_OPTIONS,
   PRODUCT_STATUS_OPTIONS,
+  skuFromProductName,
   slugifyProductName
 } from '@/features/products/constants/product-options';
 import { productFormSchema, type ProductFormValues } from '@/features/products/schemas/product';
@@ -25,6 +26,7 @@ function toMutationPayload(value: ProductFormValues): ProductMutationPayload {
   return {
     name: value.name.trim(),
     slug: value.slug.trim() || slugifyProductName(value.name),
+    sku: value.sku.trim() || skuFromProductName(value.name),
     description: value.description.trim() || null,
     category_id: value.category_id || null,
     product_type: value.product_type.trim() || null,
@@ -53,6 +55,7 @@ export default function ProductForm({
   const isEdit = !!initialData;
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const slugTouchedRef = useRef(isEdit);
+  const skuTouchedRef = useRef(isEdit);
 
   const categoryOptions = useMemo(
     () => [
@@ -75,7 +78,7 @@ export default function ProductForm({
   const createMutation = useMutation({
     ...createProductMutation,
     onSuccess: (product) => {
-      toast.success('Product created — add images, colors, and variants');
+      toast.success('Product created — add images, options, and variants');
       router.push(`/dashboard/product/${product.slug}`);
     },
     onError: (error) => {
@@ -100,6 +103,7 @@ export default function ProductForm({
     defaultValues: {
       name: initialData?.name ?? '',
       slug: initialData?.slug ?? '',
+      sku: initialData?.sku ?? '',
       description: initialData?.description ?? '',
       category_id: initialData?.category_id ?? '',
       product_type: initialData?.product_type ?? '',
@@ -146,8 +150,13 @@ export default function ProductForm({
                     placeholder='Linen shirt'
                     listeners={{
                       onChange: ({ value }) => {
-                        if (slugTouchedRef.current) return;
-                        form.setFieldValue('slug', slugifyProductName(String(value ?? '')));
+                        const nextName = String(value ?? '');
+                        if (!slugTouchedRef.current) {
+                          form.setFieldValue('slug', slugifyProductName(nextName));
+                        }
+                        if (!skuTouchedRef.current) {
+                          form.setFieldValue('sku', skuFromProductName(nextName));
+                        }
                       }
                     }}
                     validators={{
@@ -174,6 +183,21 @@ export default function ProductForm({
                           /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
                           'Use lowercase letters, numbers, and hyphens only'
                         )
+                    }}
+                  />
+                  <FormTextField
+                    name='sku'
+                    label='SKU'
+                    required
+                    description='One SKU for this product. All size and color variants share it.'
+                    placeholder='LINEN-SHIRT'
+                    listeners={{
+                      onChange: () => {
+                        skuTouchedRef.current = true;
+                      }
+                    }}
+                    validators={{
+                      onBlur: z.string().trim().min(1, 'SKU is required')
                     }}
                   />
                   <FormTextareaField
@@ -247,7 +271,7 @@ export default function ProductForm({
 
               {!initialData ? (
                 <p className='text-muted-foreground text-sm'>
-                  After creating the product you can add images, colors, and variants.
+                  After creating the product you can add images, options, and variants.
                 </p>
               ) : null}
             </div>

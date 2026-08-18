@@ -9,12 +9,16 @@ import { categoryMutationSchema } from './schemas/category';
 import {
   productImageMutationSchema,
   productMutationSchema,
+  productOptionMutationSchema,
+  productOptionValueMutationSchema,
   productVariantMutationSchema
 } from './schemas/product';
 import type {
   Category,
   CategoryMutationPayload,
   FilterOptions,
+  GenerateVariantsResult,
+  InventoryAdjustment,
   NavChildLink,
   Product,
   ProductColorMutationPayload,
@@ -22,9 +26,14 @@ import type {
   ProductImage,
   ProductImageMutationPayload,
   ProductMutationPayload,
-  ProductsResponse,
+  ProductOption,
+  ProductOptionMutationPayload,
+  ProductOptionValue,
+  ProductOptionValueMutationPayload,
   ProductVariant,
-  ProductVariantMutationPayload
+  ProductVariantMutationPayload,
+  ProductsResponse,
+  RemoveOptionValueResult
 } from './types';
 
 /**
@@ -47,6 +56,48 @@ function catalogError(message: string, cause?: unknown): Error {
     return new Error(`${message}: ${String((cause as { message: unknown }).message)}`);
   }
   return new Error(message);
+}
+
+function mapRpcMessage(message: string): string {
+  if (message.startsWith('OPTION_VALUE_IN_USE:')) {
+    const count = message.split(':')[1] ?? 'some';
+    return `${count} variants use this value. Confirm to remove or archive them.`;
+  }
+  if (message.includes('INSUFFICIENT_STOCK')) {
+    return message;
+  }
+  if (
+    message.includes('products_sku_uidx') ||
+    (message.includes('duplicate key') && message.toLowerCase().includes('sku'))
+  ) {
+    return 'That SKU is already used by another product.';
+  }
+  if (message.includes('Set a product SKU')) {
+    return 'Set a product SKU before creating variants.';
+  }
+  if (message.includes('product_variants_active_combination')) {
+    return 'That option combination already exists.';
+  }
+  if (message.includes('product_options_product_id_name')) {
+    return 'That option name already exists on this product.';
+  }
+  if (message.includes('product_option_values') && message.includes('unique')) {
+    return 'That option value already exists.';
+  }
+  return message;
+}
+
+function catalogWriteError(fallback: string, error: { message: string }): Error {
+  const mapped = mapRpcMessage(error.message);
+  if (mapped !== error.message) return catalogError(mapped, error);
+  return catalogError(fallback, error);
+}
+
+async function catalogRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(name as never, args as never);
+  if (error) throw catalogError(mapRpcMessage(error.message), error);
+  return data as T;
 }
 
 function slugifyLabel(value: string): string {
@@ -176,7 +227,7 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
   const searchTerm = sanitizeSearchTerm(filters.search ?? '');
   if (searchTerm) {
     query = query.or(
-      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,product_type.ilike.%${searchTerm}%`
+      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,product_type.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`
     );
   }
 
@@ -400,6 +451,7 @@ export async function createProduct(input: ProductMutationPayload): Promise<Prod
     .insert({
       name: payload.name,
       slug: payload.slug || slugifyLabel(payload.name),
+      sku: payload.sku,
       description: payload.description ?? null,
       price: payload.price,
       compare_at_price: payload.compare_at_price ?? null,
@@ -415,7 +467,7 @@ export async function createProduct(input: ProductMutationPayload): Promise<Prod
     .select(PRODUCT_DETAIL_SELECT)
     .single();
 
-  if (error) throw catalogError('Failed to create product', error);
+  if (error) throw catalogWriteError('Failed to create product', error);
   return toCatalogProduct(data as Parameters<typeof toCatalogProduct>[0]);
 }
 
@@ -424,6 +476,13 @@ export async function updateProduct(
   input: Partial<ProductMutationPayload>
 ): Promise<Product> {
   const payload = productMutationSchema.partial().parse(input);
+  if (payload.status === 'active') {
+    const current = await getProductById(id);
+    const sellable = current?.variants.filter((variant) => variant.status !== 'archived') ?? [];
+    if (sellable.length === 0) {
+      throw new Error('Add at least one variant before publishing this product.');
+    }
+  }
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('products')
@@ -432,7 +491,7 @@ export async function updateProduct(
     .select(PRODUCT_DETAIL_SELECT)
     .single();
 
-  if (error) throw catalogError('Failed to update product', error);
+  if (error) throw catalogWriteError('Failed to update product', error);
   return toCatalogProduct(data as Parameters<typeof toCatalogProduct>[0]);
 }
 
@@ -511,57 +570,229 @@ export async function deleteProductImage(id: string): Promise<void> {
 }
 
 export async function addProductColor(input: ProductColorMutationPayload) {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from('product_colors')
-    .insert({
-      product_id: input.product_id,
-      name: input.name,
-      hex: input.hex
-    })
-    .select('*')
-    .single();
+  const product = await getProductById(input.product_id);
+  if (!product) throw new Error('Product not found');
 
-  if (error) throw catalogError('Failed to add product color', error);
-  return data;
+  let colorOption = product.options.find((option) => option.name.toLowerCase() === 'color');
+  if (!colorOption) {
+    colorOption = await addProductOption({
+      product_id: input.product_id,
+      name: 'Color'
+    });
+  }
+
+  return addProductOptionValue({
+    option_id: colorOption.id,
+    name: input.name,
+    hex: input.hex
+  });
 }
 
-export async function deleteProductColor(id: string): Promise<void> {
-  const supabase = getSupabase();
-  const { error } = await supabase.from('product_colors').delete().eq('id', id);
-  if (error) throw catalogError('Failed to delete product color', error);
+export async function deleteProductColor(
+  id: string,
+  confirm = false
+): Promise<RemoveOptionValueResult> {
+  return removeProductOptionValue(id, confirm);
 }
 
 export async function upsertProductVariant(
   input: ProductVariantMutationPayload
 ): Promise<ProductVariant> {
   const payload = productVariantMutationSchema.parse(input);
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from('product_variants')
-    .upsert(
-      {
-        product_id: payload.product_id,
-        sku: payload.sku,
-        size: payload.size,
-        color_id: payload.color_id ?? null,
-        price: payload.price,
-        compare_at_price: payload.compare_at_price ?? null,
-        stock_quantity: payload.stock_quantity ?? 0
-      },
-      { onConflict: 'sku' }
-    )
-    .select('*')
-    .single();
+  const product = await getProductById(payload.product_id);
+  if (!product) throw new Error('Product not found');
 
-  if (error) throw catalogError('Failed to save variant', error);
-  return data as ProductVariant;
+  let optionValueIds = payload.option_value_ids ?? [];
+  if (optionValueIds.length === 0) {
+    if (payload.size) {
+      const sizeOption = product.options.find((option) => option.name.toLowerCase() === 'size');
+      const sizeValue = sizeOption?.values.find((value) => value.name === payload.size);
+      if (sizeValue) optionValueIds = [...optionValueIds, sizeValue.id];
+    }
+    if (payload.color_id) {
+      optionValueIds = [...optionValueIds, payload.color_id];
+    }
+  }
+
+  if (!product.sku) throw new Error('Set a product SKU before creating variants.');
+
+  const result = await catalogRpc<{ id: string }>('upsert_product_variant_full', {
+    p_product_id: payload.product_id,
+    p_sku: product.sku,
+    p_option_value_ids: optionValueIds,
+    p_price: payload.price,
+    p_compare_at_price: payload.compare_at_price ?? null,
+    p_barcode: payload.barcode ?? null,
+    p_stock_quantity: payload.stock_quantity ?? null,
+    p_status: payload.status ?? 'active',
+    p_variant_id: payload.variant_id ?? null
+  });
+
+  const refreshed = await getProductById(payload.product_id);
+  const saved = refreshed?.variants.find((variant) => variant.id === result.id);
+  if (!saved) throw new Error('Variant saved but could not be reloaded.');
+  return saved;
 }
 
 export async function deleteProductVariant(id: string): Promise<void> {
+  await catalogRpc('archive_or_delete_variant', { p_variant_id: id });
+}
+
+export async function addProductOption(
+  input: ProductOptionMutationPayload
+): Promise<ProductOption> {
+  const payload = productOptionMutationSchema.parse(input);
+  const row = await catalogRpc<{
+    id: string;
+    product_id: string;
+    name: string;
+    position: number;
+  }>('add_product_option', {
+    p_product_id: payload.product_id,
+    p_name: payload.name,
+    p_position: payload.position ?? null
+  });
+  return { ...row, values: [] };
+}
+
+export async function addProductOptionValue(
+  input: ProductOptionValueMutationPayload
+): Promise<ProductOptionValue> {
+  const payload = productOptionValueMutationSchema.parse(input);
+  const row = await catalogRpc<{
+    id: string;
+    option_id: string;
+    name: string;
+    position: number;
+    metadata: Record<string, unknown> | null;
+  }>('add_product_option_value', {
+    p_option_id: payload.option_id,
+    p_name: payload.name,
+    p_hex: payload.hex ?? null,
+    p_position: payload.position ?? null
+  });
+  return {
+    id: row.id,
+    option_id: row.option_id,
+    name: row.name,
+    position: row.position,
+    metadata: row.metadata
+  };
+}
+
+export async function updateProductOptionValue(input: {
+  value_id: string;
+  name?: string;
+  hex?: string | null;
+  position?: number;
+}): Promise<void> {
+  await catalogRpc('update_product_option_value', {
+    p_value_id: input.value_id,
+    p_name: input.name ?? null,
+    p_hex: input.hex ?? null,
+    p_position: input.position ?? null
+  });
+}
+
+export async function previewOptionValueUsage(valueId: string): Promise<{
+  count: number;
+  variants: string[];
+}> {
+  const result = await catalogRpc<{ count: number; variants: string[] }>(
+    'preview_option_value_usage',
+    { p_value_id: valueId }
+  );
+  return {
+    count: result?.count ?? 0,
+    variants: result?.variants ?? []
+  };
+}
+
+export async function removeProductOptionValue(
+  valueId: string,
+  confirm = false
+): Promise<RemoveOptionValueResult> {
+  const result = await catalogRpc<RemoveOptionValueResult>('remove_product_option_value', {
+    p_value_id: valueId,
+    p_confirm: confirm
+  });
+  return {
+    removed_variants: result?.removed_variants ?? 0,
+    archived_variants: result?.archived_variants ?? 0
+  };
+}
+
+export async function deleteProductOption(
+  optionId: string,
+  confirm = false
+): Promise<RemoveOptionValueResult> {
+  const result = await catalogRpc<RemoveOptionValueResult>('delete_product_option', {
+    p_option_id: optionId,
+    p_confirm: confirm
+  });
+  return {
+    removed_variants: result?.removed_variants ?? 0,
+    archived_variants: result?.archived_variants ?? 0
+  };
+}
+
+export async function generateProductVariants(productId: string): Promise<GenerateVariantsResult> {
+  const result = await catalogRpc<GenerateVariantsResult>('generate_product_variants', {
+    p_product_id: productId
+  });
+  return {
+    created: result?.created ?? 0,
+    skipped: result?.skipped ?? 0
+  };
+}
+
+export async function setVariantInventory(
+  variantId: string,
+  onHand: number,
+  reason = 'manual_adjustment'
+): Promise<void> {
+  await catalogRpc('set_variant_inventory', {
+    p_variant_id: variantId,
+    p_on_hand: onHand,
+    p_reason: reason,
+    p_actor_id: null
+  });
+}
+
+export async function setVariantMedia(variantId: string, mediaAssetIds: string[]): Promise<void> {
+  await catalogRpc('set_variant_media', {
+    p_variant_id: variantId,
+    p_media_asset_ids: mediaAssetIds
+  });
+}
+
+export async function getInventoryAdjustments(variantId: string): Promise<InventoryAdjustment[]> {
   const supabase = getSupabase();
-  const { error } = await supabase.from('product_variants').delete().eq('id', id);
-  if (error) throw catalogError('Failed to delete variant', error);
+  const { data: item, error: itemError } = await supabase
+    .from('inventory_items')
+    .select('id')
+    .eq('variant_id', variantId)
+    .maybeSingle();
+  if (itemError) throw catalogError('Failed to load inventory item', itemError);
+  if (!item) return [];
+
+  const { data, error } = await supabase
+    .from('inventory_adjustments')
+    .select('id, quantity_delta, previous_quantity, new_quantity, reason, created_at')
+    .eq('inventory_item_id', (item as { id: string }).id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) throw catalogError('Failed to load inventory history', error);
+
+  return (data ?? []).map((row) => ({
+    id: String((row as { id: string }).id),
+    variant_id: variantId,
+    quantity_delta: Number((row as { quantity_delta: number }).quantity_delta),
+    previous_quantity: Number((row as { previous_quantity: number }).previous_quantity),
+    new_quantity: Number((row as { new_quantity: number }).new_quantity),
+    reason: String((row as { reason: string }).reason),
+    created_at: String((row as { created_at: string }).created_at)
+  }));
 }
 
 /** Admin list — includes drafts/archived when status=all */

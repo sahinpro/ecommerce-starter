@@ -65,9 +65,9 @@ export function OrderStatusForm({ orderId, currentStatus }: OrderStatusFormProps
   }
 
   return (
-    <div className='flex flex-col gap-3 sm:flex-row sm:items-end'>
-      <div className='space-y-2 sm:min-w-55'>
-        <Label>Order status</Label>
+    <div className='flex min-w-0 flex-col gap-3'>
+      <div className='min-w-0 space-y-2'>
+        <Label htmlFor='order-status'>Order status</Label>
         <Select
           items={ORDER_STATUSES.map((value) => ({
             value,
@@ -76,7 +76,7 @@ export function OrderStatusForm({ orderId, currentStatus }: OrderStatusFormProps
           value={status}
           onValueChange={(value) => setStatus(value ?? currentStatus)}
         >
-          <SelectTrigger className='w-full cursor-pointer capitalize'>
+          <SelectTrigger id='order-status' className='h-9 w-full min-w-0 cursor-pointer capitalize'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -90,7 +90,7 @@ export function OrderStatusForm({ orderId, currentStatus }: OrderStatusFormProps
       </div>
       <Button
         type='button'
-        className='cursor-pointer'
+        className='w-full shrink-0 cursor-pointer'
         isLoading={isPending}
         onClick={handleSave}
         disabled={status === currentStatus}

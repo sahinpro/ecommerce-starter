@@ -12,6 +12,7 @@ export type OrderItem = {
   price_snapshot: number;
   quantity: number;
   line_total: number;
+  option_values_snapshot?: { name: string; value: string }[] | null;
 };
 
 export type Order = {

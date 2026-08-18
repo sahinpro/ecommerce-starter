@@ -17,6 +17,7 @@ export const productStatusSchema = z.enum(['active', 'draft', 'archived']);
 export const productMutationSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200),
   slug: slugSchema,
+  sku: z.string().trim().min(1, 'SKU is required').max(80),
   description: z.string().trim().max(10000).nullable().optional(),
   price: z.number().finite().nonnegative('Price must be zero or greater'),
   compare_at_price: z.number().finite().nonnegative().nullable().optional(),
@@ -41,12 +42,37 @@ export const productImageMutationSchema = z.object({
 
 export const productVariantMutationSchema = z.object({
   product_id: entityId,
-  sku: z.string().trim().min(1).max(80),
-  size: z.string().trim().min(1).max(40),
+  sku: z.string().trim().max(80).optional(),
+  size: z.string().trim().max(40).optional(),
   color_id: entityId.nullable().optional(),
   price: z.number().finite().nonnegative(),
   compare_at_price: z.number().finite().nonnegative().nullable().optional(),
-  stock_quantity: z.number().int().min(0, 'Stock cannot be negative').optional()
+  stock_quantity: z.number().int().min(0, 'Stock cannot be negative').optional(),
+  barcode: z.string().trim().max(80).nullable().optional(),
+  status: z.enum(['active', 'archived']).optional(),
+  option_value_ids: z.array(entityId).max(3).optional(),
+  variant_id: entityId.optional()
+});
+
+export const productOptionMutationSchema = z.object({
+  product_id: entityId,
+  name: z.string().trim().min(1).max(40),
+  position: z.number().int().min(0).max(2).optional()
+});
+
+export const productOptionValueMutationSchema = z.object({
+  option_id: entityId,
+  name: z.string().trim().min(1).max(80),
+  hex: z
+    .union([
+      z
+        .string()
+        .trim()
+        .regex(/^#[0-9A-Fa-f]{6}$/, 'Hex must look like #C4B7A6'),
+      z.null()
+    ])
+    .optional(),
+  position: z.number().int().min(0).optional()
 });
 
 export type ProductMutationInput = z.infer<typeof productMutationSchema>;

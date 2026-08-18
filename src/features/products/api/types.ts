@@ -6,6 +6,8 @@ export type {
   ProductFilters,
   ProductImage,
   ProductMutationPayload,
+  ProductOption,
+  ProductOptionValue,
   ProductStatus,
   ProductVariant,
   ProductsResponse

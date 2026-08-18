@@ -1,0 +1,186 @@
+{
+  "environment": {
+    "commit": "980fc74ef63f75a2dacd1ea596cd7510aa956c6f",
+    "branch": "main",
+    "url": "http://localhost:3000",
+    "browser": "Chromium/Chrome headless",
+    "viewports": [
+      "1440",
+      "768",
+      "390"
+    ],
+    "started": "2026-08-18T14:14:55.528Z",
+    "finished": "2026-08-18T14:15:35.282Z",
+    "stamp": "QA-AUTO-SUKOON-1787062495526"
+  },
+  "results": [
+    {
+      "area": "HTTP homepage",
+      "result": "PASS",
+      "notes": "status 200"
+    },
+    {
+      "area": "Admin auth (unauthenticated)",
+      "result": "PASS",
+      "notes": "dashboard 307 → /admin/sign-in?next=%2Fdashboard; /dashboard/products (doc path) 307"
+    },
+    {
+      "area": "Admin sign-in page",
+      "result": "PASS",
+      "notes": "status 200"
+    },
+    {
+      "area": "Menus table",
+      "result": "PASS",
+      "notes": "handles: main-menu, footer"
+    },
+    {
+      "area": "Homepage",
+      "result": "PASS",
+      "notes": "title=\"Sukoon | Premium Cloth Brand\"; header=1; footer=1; logo=2; hydrationError=false"
+    },
+    {
+      "area": "Navigation",
+      "result": "PASS",
+      "notes": "items=Palestine | Sukoon | Sabr | Tawakkul | Brotherhood | About | Palestine | Sukoon | Sabr | Tawakkul | Brotherhood | About; about=true; badHrefs=none"
+    },
+    {
+      "area": "Collections",
+      "result": "PASS",
+      "notes": "palestine: h1=\"Palestine\" products=10; sukoon: h1=\"Sukoon\" products=10; sabr: h1=\"Sabr\" products=2; tawakkul: h1=\"Tawakkul\" products=10; brotherhood: h1=\"Brotherhood\" products=10; invalid status=404"
+    },
+    {
+      "area": "Shop listing",
+      "result": "PASS",
+      "notes": "products=48; filterChanged=true; searchH1=\"Results for “tee”\""
+    },
+    {
+      "area": "Product detail",
+      "result": "PASS",
+      "notes": "name=\"Brotherhood Hoodie\"; images=18"
+    },
+    {
+      "area": "Wishlist",
+      "result": "PASS",
+      "notes": "opened=1; persisted=true"
+    },
+    {
+      "area": "Cart",
+      "result": "PASS",
+      "notes": "lines≈14; names=Brotherhood Hoodie | Tawakkul Longsleeve |  | TAWAKKUL LONGSLEEVE | BEST SELLER | BROTHERHOOD HOODIE; subtotalBefore=Subtotal BDT 7,180; afterInc=Subtotal BDT 11,470"
+    },
+    {
+      "area": "Checkout empty-cart guard",
+      "result": "PASS",
+      "notes": "blocked as expected"
+    },
+    {
+      "area": "Checkout",
+      "result": "PASS",
+      "notes": "COD=2; unexpectedPaymentUI=0; cartSubtotal=Subtotal BDT 4,290"
+    },
+    {
+      "area": "Checkout validation",
+      "result": "PASS",
+      "notes": "Place Order disabled until required fields are filled (no email field in this app)"
+    },
+    {
+      "area": "COD order creation",
+      "result": "PASS",
+      "notes": "order=SK-260818-736226; Total BDT 4,380 CONTINUE SHOPPING VIEW CART "
+    },
+    {
+      "area": "Order persistence (refresh confirmation)",
+      "result": "PASS",
+      "notes": "refresh did not re-submit"
+    },
+    {
+      "area": "Post-order cart",
+      "result": "PASS",
+      "notes": "cart cleared"
+    },
+    {
+      "area": "Order DB verification",
+      "result": "PASS",
+      "notes": "number=SK-260818-736226; status=pending; total=4380; pay=cod; items=Brotherhood Hoodie x1; duplicates=1"
+    },
+    {
+      "area": "Responsive QA",
+      "result": "FAIL",
+      "notes": "1440px overflow(home/shop/cart)=false/false/false menu=0; 768px overflow(home/shop/cart)=false/false/false menu=0; 390px overflow(home/shop/cart)=false/false/false menu=1"
+    },
+    {
+      "area": "Admin auth (sign-in)",
+      "result": "FAIL",
+      "notes": "Error: Could not insert QA profile: Role changes are not allowed from the client"
+    },
+    {
+      "area": "Security/authorization",
+      "result": "PASS",
+      "notes": "logged-out /dashboard/navigation → 307 /admin/sign-in?next=%2Fdashboard%2Fnavigation; service-role not in NEXT_PUBLIC_*; checkout has no card gateway"
+    }
+  ],
+  "orderInfo": {
+    "confirmationText": "Order placed successfully\nOrder SK-260818-736226 · Cash on Delivery\n\nCrafted in Bangladesh. Made for here.\n\nPalestine\nSukoon\nSabr\nTawakkul\nBrotherhood\nAbout\n1\nPalestine\nSukoon\nSabr\nTawakkul\nBrotherhood\nAbout\nShop All\nTee\nLongsleeve\n\nCream tee, “PALESTINE” + flag / Arabic back\n\nOrder Confirmed\n\nThank you for your order.\n\nOrder Number\nSK-260818-736226\nPhone\n01700000000\nShipping\nDhaka Inside — BDT 90\nPayment\nCash on Delivery\nTotal\nBDT 4,380\nCONTINUE SHOPPING\nVIEW CART\n\nWELCOME TO THE WORLD OF CASHMERE\n\nFirst Name\nEmail\n\nBy subscribing you agree to receive marketing communications from Sukoon. Unsubscribe at any time by clicking the unsubscribe link at the bottom of our emails. View our Privacy Policy and T&Cs.\n\nSign Up\n\nSHOP\n\nBest Sellers\nShop All\n\nINFORMATION\n\nShipping & Returns\nTerms & Cond",
+    "orderNumberFromUi": "SK-260818-736226",
+    "db": {
+      "id": "73622635-aeee-44b2-be47-98989bf72793",
+      "order_number": "SK-260818-736226",
+      "customer_name": "QA-AUTO-SUKOON-1787062495526",
+      "customer_phone": "01700000000",
+      "address": "QA-AUTO-SUKOON-1787062495526 QA Test Address, Dhaka",
+      "shipping_area": "dhaka_inside",
+      "subtotal": 4290,
+      "shipping_cost": 90,
+      "total": 4380,
+      "payment_method": "cod",
+      "payment_status": "pending",
+      "order_status": "pending",
+      "created_at": "2026-08-18T14:15:26.427853+00:00"
+    },
+    "duplicateCount": 1,
+    "items": [
+      {
+        "product_name_snapshot": "Brotherhood Hoodie",
+        "quantity": 1,
+        "price_snapshot": 4290,
+        "line_total": 4290,
+        "sku_snapshot": "BROTHERHOOD-HOODIE-C-L"
+      }
+    ]
+  },
+  "bugs": [
+    {
+      "severity": "Low",
+      "title": "Wishlist header control is hidden on mobile (md:hidden)",
+      "route": "/",
+      "actual": "no Wishlist button at 390px"
+    },
+    {
+      "severity": "High",
+      "title": "Admin authenticated tests could not complete",
+      "actual": "Error: Could not insert QA profile: Role changes are not allowed from the client"
+    }
+  ],
+  "classifiedErrors": [
+    {
+      "kind": "console",
+      "label": "guest",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://localhost:3000/shop/qa-does-not-exist-1787062503173"
+    },
+    {
+      "kind": "console",
+      "label": "guest",
+      "text": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>\n      <LoadingBoundary name=\"brotherhoo...\" loading={null}>\n        <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>\n          <RedirectBoundary>\n            <RedirectErrorBoundary router={{...}}>\n              <InnerLayoutRouter url=\"/product/b...\" tree={[...]} params={{slug:\"brot...\"}} cacheNode={{rsc:{...}, ...}} ...>\n                <SegmentViewNode type=\"page\" pagePath=\"(storefron...\">\n                  <SegmentTrieNode>\n                  <ProductPage>\n                    <HydrationBoundary state={{...}}>\n                      <ProductDetailView product={{id:\"abf35c...\", ...}} related={[...]}>\n                        <div>\n                          <div className=\"grid lg:gr...\">\n                            <ProductGallery>\n                            <div className=\"sticky top...\">\n                              <div className=\"flex items...\">\n                                <h1>\n                                <button\n                                  type=\"button\"\n                                  onClick={function onClick}\n                                  aria-label=\"Add to wishlist\"\n+                                 className=\"mt-1 text-red-500\"\n-                                 className=\"mt-1\"\n                                >\n                                  <Heart className=\"size-4 fil...\">\n                                    <svg\n                                      ref={null}\n                                      xmlns=\"http://www.w3.org/2000/svg\"\n                                      width={24}\n                                      height={24}\n                                      viewBox=\"0 0 24 24\"\n                                      fill=\"none\"\n                                      stroke=\"currentColor\"\n                                      strokeWidth={2}\n                                      strokeLinecap=\"round\"\n                                      strokeLinejoin=\"round\"\n+                                     className=\"tabler-icon tabler-icon-heart size-4 fill-current\"\n-                                     className=\"tabler-icon tabler-icon-heart size-4\"\n                                    >\n                              ...\n                          ...\n                ...\n              ...\n",
+      "url": "http://localhost:3000/product/brotherhood-hoodie"
+    },
+    {
+      "kind": "console",
+      "label": "guest",
+      "text": "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+      "url": "http://localhost:3000/"
+    }
+  ],
+  "menusReady": true
+}

@@ -1,13 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Icons } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+import { findVariant } from '@/features/catalog/adapters';
 
 import type { Product, ProductColor, ProductImage } from '../../api/types';
 import { PRODUCT_IMAGE_FALLBACK } from '../../constants/product-image';
@@ -107,13 +108,31 @@ function ProductGallery({ images, productName }: { images: ProductImage[]; produ
 }
 
 export function ProductDetailView({ product, related }: ProductDetailViewProps) {
-  const router = useRouter();
   const addItem = useCartStore((s) => s.addItem);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
+  const wishlistHydrated = useWishlistStore((s) => s.hasHydrated);
   const isWishlisted = useWishlistStore((s) => s.has(product.id));
+  const wishlisted = wishlistHydrated && isWishlisted;
 
   const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<string | undefined>(product.sizes[0]);
+  const selectedVariant =
+    selectedSize != null ? findVariant(product, selectedSize, selectedColor?.id) : undefined;
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const displayCompare = selectedVariant?.compare_at_price ?? product.compare_at_price;
+  const galleryImages = (() => {
+    if (!selectedColor) return product.images;
+    const mediaIds = new Set(
+      product.variants
+        .filter((variant) => variant.color_id === selectedColor.id)
+        .flatMap((variant) => variant.media_asset_ids)
+    );
+    if (mediaIds.size === 0) return product.images;
+    const matched = product.images.filter(
+      (image) => image.media_asset_id && mediaIds.has(image.media_asset_id)
+    );
+    return matched.length > 0 ? matched : product.images;
+  })();
 
   useEffect(() => {
     function trackCurrent() {
@@ -132,6 +151,12 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
     if (!selectedColor || !selectedSize) {
       toast.warning('Select options', {
         description: 'Please choose a size and color first.'
+      });
+      return;
+    }
+    if (!selectedVariant || selectedVariant.stock_quantity < 1) {
+      toast.warning('Not enough stock', {
+        description: 'This variant is out of stock.'
       });
       return;
     }
@@ -157,7 +182,11 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
   return (
     <div>
       <div className='grid lg:grid-cols-2'>
-        <ProductGallery key={product.id} images={product.images} productName={product.name} />
+        <ProductGallery
+          key={`${product.id}-${selectedColor?.id ?? 'default'}`}
+          images={galleryImages}
+          productName={product.name}
+        />
 
         <div className='sticky top-40 h-fit px-4 py-16 lg:max-w-md'>
           <div className='flex items-start justify-between gap-4'>
@@ -166,19 +195,19 @@ export function ProductDetailView({ product, related }: ProductDetailViewProps) 
               type='button'
               onClick={() => toggleWishlist(product.id)}
               aria-label='Add to wishlist'
-              className={cn('mt-1', isWishlisted && 'text-red-500')}
+              className={cn('mt-1', wishlisted && 'text-red-500')}
             >
-              <Icons.heart className={cn('size-4', isWishlisted && 'fill-current')} />
+              <Icons.heart className={cn('size-4', wishlisted && 'fill-current')} />
             </button>
           </div>
 
           <div className='mt-6 flex items-center gap-3'>
-            {product.compare_at_price ? (
+            {displayCompare ? (
               <span className='text-muted-foreground line-through'>
-                {formatPrice(product.compare_at_price)}
+                {formatPrice(displayCompare)}
               </span>
             ) : null}
-            <span className='text-lg'>{formatPrice(product.price)}</span>
+            <span className='text-lg'>{formatPrice(displayPrice)}</span>
           </div>
 
           <p className='text-muted-foreground mt-6 text-sm leading-relaxed'>

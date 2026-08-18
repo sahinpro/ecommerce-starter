@@ -13,7 +13,7 @@ async function getOverviewStats() {
   const [ordersResult, productsResult, variantsResult, settings] = await Promise.all([
     listOrders({ page: 1, limit: 5 }).catch(() => ({ items: [], total_items: 0 })),
     supabase.from('products').select('id', { count: 'exact', head: true }).is('deleted_at', null),
-    supabase.from('product_variants').select('id, stock_quantity, sku'),
+    supabase.from('product_variants').select('id, stock_quantity, sku, size'),
     getStoreSettings().catch(() => null)
   ]);
 
@@ -23,6 +23,7 @@ async function getOverviewStats() {
     id: string;
     stock_quantity: number;
     sku: string;
+    size: string | null;
   }[];
 
   const lowStock = variants.filter(
@@ -62,7 +63,7 @@ export default async function OverViewLayout({ children }: { children: React.Rea
       hint: 'Catalog products (not deleted).'
     },
     {
-      label: 'Out of stock SKUs',
+      label: 'Out of stock variants',
       value: String(stats.outOfStock.length),
       hint: `${stats.lowStock.length} low-stock (≤ ${stats.lowStockThreshold}).`
     }
@@ -136,12 +137,14 @@ export default async function OverViewLayout({ children }: { children: React.Rea
                 <ul className='space-y-1 text-sm'>
                   {stats.outOfStock.slice(0, 5).map((v) => (
                     <li key={v.id} className='text-destructive'>
-                      {v.sku} · Out of stock
+                      {v.sku}
+                      {v.size ? ` · ${v.size}` : ''} · Out of stock
                     </li>
                   ))}
                   {stats.lowStock.slice(0, 5).map((v) => (
                     <li key={v.id} className='text-amber-600'>
-                      {v.sku} · {v.stock_quantity} left
+                      {v.sku}
+                      {v.size ? ` · ${v.size}` : ''} · {v.stock_quantity} left
                     </li>
                   ))}
                 </ul>
