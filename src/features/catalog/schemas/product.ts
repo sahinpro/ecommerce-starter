@@ -28,7 +28,9 @@ export const productMutationSchema = z.object({
   status: productStatusSchema.optional(),
   composition: z.string().trim().max(2000).nullable().optional(),
   care: z.string().trim().max(2000).nullable().optional(),
-  size_fit: z.string().trim().max(2000).nullable().optional()
+  size_fit: z.string().trim().max(2000).nullable().optional(),
+  size_fit_image_id: entityId.nullable().optional(),
+  size_fit_image_url: z.string().trim().max(2000).nullable().optional()
 });
 
 export const productImageMutationSchema = z.object({

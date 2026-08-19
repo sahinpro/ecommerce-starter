@@ -81,6 +81,8 @@ export type StoreSettings = {
 export type OrderFilters = {
   search?: string;
   status?: OrderStatus | 'all';
+  date_from?: string;
+  date_to?: string;
   page?: number;
   limit?: number;
 };

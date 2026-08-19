@@ -13,6 +13,7 @@ import { filterOptionsQueryOptions, productsQueryOptions } from '../../api/queri
 import type { FilterOptions, ProductFilters } from '../../api/types';
 import { ProductCard } from '../product/product-card';
 import { FilterPanel } from './filter-panel';
+import { ShopBreadcrumb } from './shop-breadcrumb';
 
 const EMPTY_FILTER_OPTIONS: FilterOptions = {
   sizes: [],
@@ -95,7 +96,12 @@ export function ShopListing({ category, title }: ShopListingProps) {
 
   return (
     <div className='px-6 py-8 md:px-6'>
-      <div className='mb-8 flex flex-wrap items-center justify-between gap-4'>
+      <ShopBreadcrumb
+        items={
+          category ? [{ label: 'Shop', href: '/shop' }, { label: title }] : [{ label: 'Shop' }]
+        }
+      />
+      <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
         <h1 className={cn('font-serif text-2xl', !search && 'capitalize')}>
           {search ? `Results for “${search}”` : title}
         </h1>
@@ -137,6 +143,9 @@ export function ShopListing({ category, title }: ShopListingProps) {
                 onToggleSize={(size) => toggleValue(pendingSizes, size, setPendingSizes)}
                 onToggleColor={(color) => toggleValue(pendingColors, color, setPendingColors)}
                 onToggleType={(type) => toggleValue(pendingTypes, type, setPendingTypes)}
+                onClearSizes={() => setPendingSizes([])}
+                onClearColors={() => setPendingColors([])}
+                onClearTypes={() => setPendingTypes([])}
                 onApply={applyFilters}
                 onClear={clearFilters}
               />
@@ -144,6 +153,50 @@ export function ShopListing({ category, title }: ShopListingProps) {
           </Sheet>
         </div>
       </div>
+
+      {filterOptions.product_types.length > 0 ? (
+        <nav
+          aria-label='Product type'
+          className='mb-8 flex flex-wrap items-center gap-x-2 gap-y-2 text-[13px] tracking-wide uppercase'
+        >
+          <button
+            type='button'
+            onClick={() => void setParams({ types: '' })}
+            className={cn(
+              !filters.product_types?.length
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Shop All
+          </button>
+          {filterOptions.product_types.map((type) => {
+            const active = Boolean(filters.product_types?.includes(type));
+            return (
+              <span key={type} className='flex items-center gap-2'>
+                <span className='text-muted-foreground' aria-hidden>
+                  ·
+                </span>
+                <button
+                  type='button'
+                  onClick={() => {
+                    const current = filters.product_types ?? [];
+                    const next = current.includes(type)
+                      ? current.filter((item) => item !== type)
+                      : [...current, type];
+                    void setParams({ types: next.join(',') });
+                  }}
+                  className={cn(
+                    active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {type}
+                </button>
+              </span>
+            );
+          })}
+        </nav>
+      ) : null}
 
       <Suspense fallback={<ProductGridSkeleton view={params.view} />}>
         <ShopProductGrid filters={filters} search={search} view={params.view} />

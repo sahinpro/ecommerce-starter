@@ -28,14 +28,18 @@ const SLIDE_MS = 400;
 type HeaderMenuButtonProps = {
   open: boolean;
   onToggle: () => void;
+  onHoverOpen?: () => void;
   inverted: boolean;
 };
 
-function HeaderMenuButton({ open, onToggle, inverted }: HeaderMenuButtonProps) {
+function HeaderMenuButton({ open, onToggle, onHoverOpen, inverted }: HeaderMenuButtonProps) {
   return (
     <button
       type='button'
       onClick={onToggle}
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'mouse') onHoverOpen?.();
+      }}
       className={cn(
         'flex w-fit cursor-pointer items-center gap-2 text-[14px] tracking-[0.04em] hover:opacity-70 md:text-[13px] md:tracking-[0.26px]',
         inverted
@@ -125,6 +129,7 @@ type HeaderChromeProps = {
   onAnnouncementDismiss: () => void;
   toolsProps: Omit<HeaderToolsProps, 'inverted'>;
   onMenuToggle: () => void;
+  onMenuHoverOpen?: () => void;
   onNavItemHover: (item: NavPrimaryItem) => void;
   primaryNav: NavPrimaryItem[];
 };
@@ -137,6 +142,7 @@ function HeaderChrome({
   onAnnouncementDismiss,
   toolsProps,
   onMenuToggle,
+  onMenuHoverOpen,
   onNavItemHover,
   primaryNav
 }: HeaderChromeProps) {
@@ -164,29 +170,40 @@ function HeaderChrome({
           stackedNav ? 'h-auto items-start pt-7 pb-8' : 'h-20 items-center'
         )}
       >
-        <nav
-          aria-label='Primary'
-          className={cn(
-            'z-10 flex text-[12px] leading-3.25 tracking-[0.26px]',
-            stackedNav ? 'flex-col gap-4' : 'flex-row flex-wrap items-center gap-x-5 gap-y-1',
-            inverted ? 'text-sukoon-black' : 'text-white',
-            menuOpen && 'pointer-events-none opacity-0'
-          )}
-        >
-          {primaryNav.map((item) => (
-            <button
-              key={item.id ?? item.label}
-              type='button'
-              onPointerEnter={(event) => {
-                if (event.pointerType === 'mouse') onNavItemHover(item);
-              }}
-              onFocus={() => onNavItemHover(item)}
-              className='w-fit cursor-pointer text-left transition-opacity hover:opacity-70'
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
+        {stackedNav ? (
+          <nav
+            aria-label='Primary'
+            className={cn(
+              'z-10 flex text-[12px] leading-3.25 tracking-[0.26px]',
+              'flex-col gap-4',
+              inverted ? 'text-sukoon-black' : 'text-white',
+              menuOpen && 'pointer-events-none opacity-0'
+            )}
+          >
+            {primaryNav.map((item) => (
+              <button
+                key={item.id ?? item.label}
+                type='button'
+                onPointerEnter={(event) => {
+                  if (event.pointerType === 'mouse') onNavItemHover(item);
+                }}
+                onFocus={() => onNavItemHover(item)}
+                className='w-fit cursor-pointer text-left transition-opacity hover:opacity-70'
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        ) : (
+          <div className='z-10 justify-self-start'>
+            <HeaderMenuButton
+              open={menuOpen}
+              onToggle={onMenuToggle}
+              onHoverOpen={onMenuHoverOpen}
+              inverted={inverted}
+            />
+          </div>
+        )}
 
         <SukoonLogo variant='header' tone={inverted ? 'black' : 'white'} className='z-20' />
 
@@ -317,6 +334,7 @@ export function StorefrontHeader() {
     onAnnouncementDismiss: () => setAnnouncementVisible(false),
     toolsProps,
     onMenuToggle: toggleMenu,
+    onMenuHoverOpen: () => openMenu(activeNav ?? undefined),
     onNavItemHover: openMenu,
     primaryNav
   };

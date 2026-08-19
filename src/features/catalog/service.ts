@@ -3,7 +3,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSupabaseAnonClient } from '@/lib/supabase/anon';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-import { buildFilterOptions, PRODUCT_DETAIL_SELECT, toCatalogProduct } from './adapters';
+import {
+  buildFilterOptions,
+  PRODUCT_DETAIL_SELECT,
+  PRODUCT_DETAIL_SELECT_LEGACY,
+  toCatalogProduct
+} from './adapters';
 import { getCollectionNavChildren } from './figma-taxonomy';
 import { categoryMutationSchema } from './schemas/category';
 import {
@@ -100,6 +105,43 @@ async function catalogRpc<T>(name: string, args: Record<string, unknown>): Promi
   return data as T;
 }
 
+let cachedProductDetailSelect: string | null = null;
+
+function isMissingOptionValueMedia(message: string): boolean {
+  return (
+    message.includes('product_option_value_media') &&
+    (message.includes('Could not find a relationship') || message.includes('does not exist'))
+  );
+}
+
+async function productDetailSelect(): Promise<typeof PRODUCT_DETAIL_SELECT> {
+  if (cachedProductDetailSelect) {
+    return cachedProductDetailSelect as typeof PRODUCT_DETAIL_SELECT;
+  }
+  const supabase = getSupabase();
+  const { error } = await supabase.from('products').select(PRODUCT_DETAIL_SELECT).limit(1);
+  if (!error) {
+    cachedProductDetailSelect = PRODUCT_DETAIL_SELECT;
+    return PRODUCT_DETAIL_SELECT;
+  }
+  if (isMissingOptionValueMedia(error.message)) {
+    cachedProductDetailSelect = PRODUCT_DETAIL_SELECT_LEGACY;
+    return PRODUCT_DETAIL_SELECT_LEGACY as typeof PRODUCT_DETAIL_SELECT;
+  }
+  throw catalogError('Failed to load product', error);
+}
+
+function isMissingSizeFitImageColumn(message: string): boolean {
+  return message.includes('size_fit_image');
+}
+
+function withoutSizeFitImage<T extends Record<string, unknown>>(row: T): Record<string, unknown> {
+  const next = { ...row };
+  delete next.size_fit_image_id;
+  delete next.size_fit_image_url;
+  return next;
+}
+
 function slugifyLabel(value: string): string {
   return value
     .toLowerCase()
@@ -184,10 +226,8 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
   const to = from + limit - 1;
 
   const supabase = getSupabase();
-  let query = supabase
-    .from('products')
-    .select(PRODUCT_DETAIL_SELECT, { count: 'exact' })
-    .range(from, to);
+  const select = await productDetailSelect();
+  let query = supabase.from('products').select(select, { count: 'exact' }).range(from, to);
 
   if (!filters.includeDeleted) {
     query = query.is('deleted_at', null);
@@ -279,7 +319,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('products')
-    .select(PRODUCT_DETAIL_SELECT)
+    .select(await productDetailSelect())
     .eq('slug', slug)
     .is('deleted_at', null)
     .maybeSingle();
@@ -307,7 +347,7 @@ export async function getProductById(id: string): Promise<Product | null> {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('products')
-    .select(PRODUCT_DETAIL_SELECT)
+    .select(await productDetailSelect())
     .eq('id', id)
     .maybeSingle();
 
@@ -336,7 +376,7 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('products')
-    .select(PRODUCT_DETAIL_SELECT)
+    .select(await productDetailSelect())
     .in('id', ids)
     .eq('status', 'active')
     .is('deleted_at', null);
@@ -446,29 +486,40 @@ export async function deleteCategory(id: string): Promise<void> {
 export async function createProduct(input: ProductMutationPayload): Promise<Product> {
   const payload = productMutationSchema.parse(input);
   const supabase = getSupabase();
-  const { data, error } = await supabase
+  const row = {
+    name: payload.name,
+    slug: payload.slug || slugifyLabel(payload.name),
+    sku: payload.sku,
+    description: payload.description ?? null,
+    price: payload.price,
+    compare_at_price: payload.compare_at_price ?? null,
+    category_id: payload.category_id ?? null,
+    product_type: payload.product_type ?? null,
+    badge: payload.badge ?? null,
+    featured: payload.featured ?? false,
+    status: payload.status ?? 'draft',
+    composition: payload.composition ?? null,
+    care: payload.care ?? null,
+    size_fit: payload.size_fit ?? null,
+    size_fit_image_id: payload.size_fit_image_id ?? null,
+    size_fit_image_url: payload.size_fit_image_url ?? null
+  };
+  let result = await supabase
     .from('products')
-    .insert({
-      name: payload.name,
-      slug: payload.slug || slugifyLabel(payload.name),
-      sku: payload.sku,
-      description: payload.description ?? null,
-      price: payload.price,
-      compare_at_price: payload.compare_at_price ?? null,
-      category_id: payload.category_id ?? null,
-      product_type: payload.product_type ?? null,
-      badge: payload.badge ?? null,
-      featured: payload.featured ?? false,
-      status: payload.status ?? 'draft',
-      composition: payload.composition ?? null,
-      care: payload.care ?? null,
-      size_fit: payload.size_fit ?? null
-    })
-    .select(PRODUCT_DETAIL_SELECT)
+    .insert(row)
+    .select(await productDetailSelect())
     .single();
 
-  if (error) throw catalogWriteError('Failed to create product', error);
-  return toCatalogProduct(data as Parameters<typeof toCatalogProduct>[0]);
+  if (result.error && isMissingSizeFitImageColumn(result.error.message)) {
+    result = await supabase
+      .from('products')
+      .insert(withoutSizeFitImage(row))
+      .select(await productDetailSelect())
+      .single();
+  }
+
+  if (result.error) throw catalogWriteError('Failed to create product', result.error);
+  return toCatalogProduct(result.data as Parameters<typeof toCatalogProduct>[0]);
 }
 
 export async function updateProduct(
@@ -484,22 +535,31 @@ export async function updateProduct(
     }
   }
   const supabase = getSupabase();
-  const { data, error } = await supabase
+  let result = await supabase
     .from('products')
     .update(payload)
     .eq('id', id)
-    .select(PRODUCT_DETAIL_SELECT)
+    .select(await productDetailSelect())
     .single();
 
-  if (error) throw catalogWriteError('Failed to update product', error);
-  return toCatalogProduct(data as Parameters<typeof toCatalogProduct>[0]);
+  if (result.error && isMissingSizeFitImageColumn(result.error.message)) {
+    result = await supabase
+      .from('products')
+      .update(withoutSizeFitImage(payload))
+      .eq('id', id)
+      .select(await productDetailSelect())
+      .single();
+  }
+
+  if (result.error) throw catalogWriteError('Failed to update product', result.error);
+  return toCatalogProduct(result.data as Parameters<typeof toCatalogProduct>[0]);
 }
 
 export async function archiveProduct(id: string): Promise<void> {
   const supabase = getSupabase();
   const { error } = await supabase
     .from('products')
-    .update({ status: 'archived', deleted_at: new Date().toISOString() })
+    .update({ status: 'archived', deleted_at: null })
     .eq('id', id);
 
   if (error) throw catalogError('Failed to archive product', error);
@@ -676,7 +736,8 @@ export async function addProductOptionValue(
     option_id: row.option_id,
     name: row.name,
     position: row.position,
-    metadata: row.metadata
+    metadata: row.metadata,
+    media_asset_ids: []
   };
 }
 
@@ -766,6 +827,16 @@ export async function setVariantMedia(variantId: string, mediaAssetIds: string[]
   });
 }
 
+export async function setOptionValueMedia(
+  optionValueId: string,
+  mediaAssetIds: string[]
+): Promise<void> {
+  await catalogRpc('set_option_value_media', {
+    p_option_value_id: optionValueId,
+    p_media_asset_ids: mediaAssetIds
+  });
+}
+
 export async function getInventoryAdjustments(variantId: string): Promise<InventoryAdjustment[]> {
   const supabase = getSupabase();
   const { data: item, error: itemError } = await supabase
@@ -797,9 +868,10 @@ export async function getInventoryAdjustments(variantId: string): Promise<Invent
 
 /** Admin list — includes drafts/archived when status=all */
 export async function getAdminProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
+  const status = filters.status ?? 'all';
   return getProducts({
     ...filters,
-    status: filters.status ?? 'all',
-    includeDeleted: filters.includeDeleted ?? false
+    status,
+    includeDeleted: filters.includeDeleted ?? status === 'archived'
   });
 }

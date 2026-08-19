@@ -8,12 +8,12 @@ export default function ShippingPage() {
       <h1 className='font-serif text-4xl'>Shipping & Returns</h1>
       <div className='text-muted-foreground mt-8 space-y-6 leading-relaxed'>
         <p>
-          Free express shipping on all Bangladesh orders over 5,000 TK. Standard
-          delivery typically arrives within 2–4 business days.
+          Free express shipping on all Bangladesh orders over 5,000 TK. Standard delivery typically
+          arrives within 2–4 business days.
         </p>
         <p>
-          Returns are accepted within 14 days for unworn items with original tags.
-          Initiate a return by contacting our support team.
+          Returns are accepted within 14 days for unworn items with original tags. Initiate a return
+          by contacting our support team.
         </p>
       </div>
     </div>

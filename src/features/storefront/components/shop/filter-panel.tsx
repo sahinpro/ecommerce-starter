@@ -12,6 +12,9 @@ type FilterSheetProps = {
   onToggleSize: (size: string) => void;
   onToggleColor: (color: string) => void;
   onToggleType: (type: string) => void;
+  onClearSizes: () => void;
+  onClearColors: () => void;
+  onClearTypes: () => void;
   onApply: () => void;
   onClear: () => void;
 };
@@ -59,6 +62,9 @@ export function FilterPanel({
   onToggleSize,
   onToggleColor,
   onToggleType,
+  onClearSizes,
+  onClearColors,
+  onClearTypes,
   onApply,
   onClear
 }: FilterSheetProps) {
@@ -76,6 +82,7 @@ export function FilterPanel({
       </div>
 
       <FilterGroup title='Product Type'>
+        <FilterChip label='All' active={selectedTypes.length === 0} onClick={onClearTypes} />
         {options.product_types.map((type) => (
           <FilterChip
             key={type}
@@ -87,6 +94,7 @@ export function FilterPanel({
       </FilterGroup>
 
       <FilterGroup title='Size'>
+        <FilterChip label='All' active={selectedSizes.length === 0} onClick={onClearSizes} />
         {options.sizes.map((size) => (
           <FilterChip
             key={size}
@@ -98,6 +106,7 @@ export function FilterPanel({
       </FilterGroup>
 
       <FilterGroup title='Colour'>
+        <FilterChip label='All' active={selectedColors.length === 0} onClick={onClearColors} />
         {options.colors.map((color) => (
           <FilterChip
             key={color.name}

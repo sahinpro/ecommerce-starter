@@ -1,20 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { Icons } from '@/components/icons';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
+import { getQueryClient } from '@/lib/query-client';
 import { uploadOrReuseMedia } from '../api/client';
 import { deleteMediaMutation, mediaAssetsQueryOptions, mediaKeys } from '../api/queries';
 import type { MediaAsset } from '../api/types';
-import { getQueryClient } from '@/lib/query-client';
+
+function folderLabel(folder: string): string {
+  if (folder.endsWith('/home')) return 'Home';
+  if (folder.endsWith('/products')) return 'Products';
+  if (folder.endsWith('/swatches')) return 'Swatches';
+  return folder;
+}
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '—';
@@ -98,7 +106,7 @@ export default function MediaLibraryPage() {
           No media yet. Upload images here, then attach them to products.
         </p>
       ) : (
-        <ul className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'>
+        <ul className='grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8'>
           {assets.map((asset) => (
             <li key={asset.id} className='overflow-hidden rounded-md border'>
               <div className='bg-muted relative aspect-square'>
@@ -107,45 +115,67 @@ export default function MediaLibraryPage() {
                   alt={asset.alt || asset.public_id}
                   fill
                   className='object-cover'
-                  sizes='200px'
+                  sizes='140px'
                 />
+                {asset.locked ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type='button'
+                          className='bg-background/90 absolute top-1 right-1 z-10 flex size-5 cursor-help items-center justify-center rounded-sm border'
+                          aria-label='Why this image cannot be deleted'
+                        />
+                      }
+                    >
+                      <Icons.alertCircle className='size-3' />
+                    </TooltipTrigger>
+                    <TooltipContent side='top' className='max-w-52 text-left'>
+                      Storefront file from {folderLabel(asset.folder)}. It cannot be deleted from
+                      the library.
+                    </TooltipContent>
+                  </Tooltip>
+                ) : null}
               </div>
-              <div className='space-y-2 p-3'>
-                <p className='truncate font-mono text-xs' title={asset.public_id}>
-                  {asset.public_id}
+              <div className='space-y-1 p-1.5'>
+                <p className='truncate font-mono text-[10px] leading-tight' title={asset.public_id}>
+                  {asset.public_id.split('/').pop()}
                 </p>
-                <p className='text-muted-foreground text-xs'>
-                  {asset.width && asset.height ? `${asset.width}×${asset.height} · ` : null}
-                  {formatBytes(asset.bytes)}
-                  {typeof asset.usage_count === 'number'
-                    ? ` · ${asset.usage_count} product${asset.usage_count === 1 ? '' : 's'}`
+                <p className='text-muted-foreground truncate text-[10px] leading-tight'>
+                  {asset.locked ? folderLabel(asset.folder) : null}
+                  {asset.locked ? ' · ' : null}
+                  {!asset.locked && asset.width && asset.height
+                    ? `${asset.width}×${asset.height} · `
                     : null}
+                  {formatBytes(asset.bytes)}
                 </p>
-                <div className='flex gap-2'>
+                <div className='flex gap-1'>
                   <Button
                     type='button'
                     size='sm'
                     variant='outline'
-                    className='flex-1 cursor-pointer'
+                    className='h-6 flex-1 cursor-pointer px-1.5 text-[10px]'
                     onClick={() => window.open(asset.url, '_blank', 'noopener,noreferrer')}
                   >
                     View
                   </Button>
-                  <Button
-                    type='button'
-                    size='sm'
-                    variant='ghost'
-                    className='cursor-pointer'
-                    disabled={(asset.usage_count ?? 0) > 0}
-                    title={
-                      (asset.usage_count ?? 0) > 0
-                        ? 'Remove from products first'
-                        : 'Delete from library'
-                    }
-                    onClick={() => setPendingDelete(asset)}
-                  >
-                    <Icons.trash className='size-4' />
-                  </Button>
+                  {asset.locked ? null : (
+                    <Button
+                      type='button'
+                      size='icon'
+                      variant='ghost'
+                      className='size-6 cursor-pointer'
+                      disabled={(asset.usage_count ?? 0) > 0}
+                      title={
+                        (asset.usage_count ?? 0) > 0
+                          ? 'Remove from products first'
+                          : 'Delete from library'
+                      }
+                      onClick={() => setPendingDelete(asset)}
+                    >
+                      <Icons.trash className='size-3' />
+                    </Button>
+                  )}
                 </div>
               </div>
             </li>

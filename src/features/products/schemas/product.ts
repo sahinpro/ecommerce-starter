@@ -32,7 +32,9 @@ export const productFormSchema = z.object({
   compare_at_price: z.union([z.number().finite().nonnegative(), z.literal(''), z.null()]),
   composition: z.string().trim().max(2000),
   care: z.string().trim().max(2000),
-  size_fit: z.string().trim().max(2000)
+  size_fit: z.string().trim().max(2000),
+  size_fit_image_id: z.string(),
+  size_fit_image_url: z.string()
 });
 
 export type ProductFormValues = z.input<typeof productFormSchema>;

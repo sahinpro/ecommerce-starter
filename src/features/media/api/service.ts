@@ -5,6 +5,7 @@ import { deleteCloudinaryAsset } from '@/lib/cloudinary';
 import { getAdminUser } from '@/lib/auth/session';
 
 import type { MediaAsset, MediaAssetCreateInput, MediaListFilters } from './types';
+import { isBundledMediaId, listBundledStorefrontAssets } from './bundled-assets';
 
 async function assertAdmin(): Promise<void> {
   const admin = await getAdminUser();
@@ -89,6 +90,11 @@ export async function listMediaAssets(filters: MediaListFilters = {}): Promise<M
   await assertAdmin();
   const admin = createSupabaseAdminClient();
 
+  const bundled = await listBundledStorefrontAssets(filters.search);
+  const bundledFiltered = filters.folder?.trim()
+    ? bundled.filter((asset) => asset.folder === filters.folder?.trim())
+    : bundled;
+
   let query = admin
     .from('media_assets')
     .select('*')
@@ -108,7 +114,7 @@ export async function listMediaAssets(filters: MediaListFilters = {}): Promise<M
   if (error) throw new Error(error.message || 'Failed to list media');
 
   const assets = (data ?? []).map((row) => mapAsset(row as Record<string, unknown>));
-  if (!assets.length) return [];
+  if (!assets.length) return bundledFiltered;
 
   const ids = assets.map((asset) => asset.id);
   const { data: usages, error: usageError } = await admin
@@ -125,10 +131,12 @@ export async function listMediaAssets(filters: MediaListFilters = {}): Promise<M
     counts.set(id, (counts.get(id) ?? 0) + 1);
   }
 
-  return assets.map((asset) => ({
+  const uploaded = assets.map((asset) => ({
     ...asset,
     usage_count: counts.get(asset.id) ?? 0
   }));
+
+  return [...bundledFiltered, ...uploaded];
 }
 
 export async function getMediaUsageCount(mediaAssetId: string): Promise<number> {
@@ -145,6 +153,9 @@ export async function getMediaUsageCount(mediaAssetId: string): Promise<number> 
 
 export async function deleteMediaAsset(id: string): Promise<void> {
   await assertAdmin();
+  if (isBundledMediaId(id)) {
+    throw new Error('Storefront images cannot be removed from the media library.');
+  }
   const admin = createSupabaseAdminClient();
 
   const { data: asset, error: loadError } = await admin

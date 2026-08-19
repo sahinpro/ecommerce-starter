@@ -40,10 +40,11 @@ export function MediaPickerDialog({
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const { data: assets = [], isLoading } = useQuery({
+  const { data: allAssets = [], isLoading } = useQuery({
     ...mediaAssetsQueryOptions({ search }),
     enabled: open
   });
+  const assets = useMemo(() => allAssets.filter((asset) => !asset.locked), [allAssets]);
 
   const excluded = useMemo(() => new Set(excludePublicIds), [excludePublicIds]);
 

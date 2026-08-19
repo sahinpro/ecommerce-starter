@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -9,36 +9,45 @@ import { Icons } from '@/components/icons';
 import { AlertModal } from '@/components/modal/alert-modal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MediaPickerDialog } from '@/features/media';
-import { StatusBadge } from '@/components/ui/status-badge';
-import { variantDisplayName } from '@/features/catalog/adapters';
+import type { MediaAsset } from '@/features/media';
+import { imageForMediaAsset } from '@/features/catalog/adapters';
 import { previewOptionValueUsage } from '../api/service';
 import {
-  combinationKey,
-  generateOptionCombinations,
-  isColorOptionName
+  isColorOptionName,
+  isSizeOptionName,
+  sortSizeValues
 } from '@/features/catalog/variant-engine';
-import { stockStatusLabel } from '@/features/orders/constants';
 
+import {
+  patchCachedProduct,
+  productWithImage,
+  productWithOption,
+  productWithOptionValue,
+  productWithOptionValueMedia,
+  productWithPrimaryImage,
+  productWithUpdatedOptionValue,
+  productWithoutImage,
+  productWithoutOption,
+  productWithoutOptionValue,
+  restoreCachedProduct
+} from '../api/cache';
 import {
   addProductImageMutation,
   addProductOptionMutation,
   addProductOptionValueMutation,
   deleteProductImageMutation,
   deleteProductOptionMutation,
-  deleteProductVariantMutation,
-  generateProductVariantsMutation,
   removeProductOptionValueMutation,
+  setOptionValueMediaMutation,
   setPrimaryProductImageMutation,
-  setVariantInventoryMutation,
-  setVariantMediaMutation,
-  upsertProductVariantMutation
+  updateProductOptionValueMutation
 } from '../api/mutations';
-import type { Product } from '../api/types';
-import { formatProductPrice } from '../constants/product-options';
+import type { Product, ProductOptionValue } from '../api/types';
+import { ColorSwatchPicker, hexForColorName } from './color-swatch-picker';
+import { ProductVariantsSection } from './product-variants-section';
 
 const OPTION_PRESETS = ['Size', 'Color', 'Material'] as const;
 
@@ -57,6 +66,9 @@ function ProductImagesSection({ product }: { product: Product }) {
 
   const addMutation = useMutation({
     ...addProductImageMutation,
+    onSuccess: (image) => {
+      patchCachedProduct(product, (current) => productWithImage(current, image));
+    },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to add image');
     }
@@ -64,16 +76,30 @@ function ProductImagesSection({ product }: { product: Product }) {
 
   const deleteMutation = useMutation({
     ...deleteProductImageMutation,
+    onMutate: (imageId) => {
+      const snapshot = patchCachedProduct(product, (current) =>
+        productWithoutImage(current, imageId)
+      );
+      return { snapshot };
+    },
     onSuccess: () => toast.success('Image detached (kept in media library)'),
-    onError: (error) => {
+    onError: (error, _imageId, context) => {
+      restoreCachedProduct(product, context?.snapshot);
       toast.error(error instanceof Error ? error.message : 'Failed to remove image');
     }
   });
 
   const primaryMutation = useMutation({
     ...setPrimaryProductImageMutation,
+    onMutate: ({ imageId }) => {
+      const snapshot = patchCachedProduct(product, (current) =>
+        productWithPrimaryImage(current, imageId)
+      );
+      return { snapshot };
+    },
     onSuccess: () => toast.success('Primary image updated'),
-    onError: (error) => {
+    onError: (error, _vars, context) => {
+      restoreCachedProduct(product, context?.snapshot);
       toast.error(error instanceof Error ? error.message : 'Failed to set primary image');
     }
   });
@@ -194,7 +220,8 @@ function ProductOptionsSection({ product }: { product: Product }) {
 
   const addOptionMutation = useMutation({
     ...addProductOptionMutation,
-    onSuccess: () => {
+    onSuccess: (option) => {
+      patchCachedProduct(product, (current) => productWithOption(current, option));
       setOptionName('');
       toast.success('Option added');
     },
@@ -205,10 +232,13 @@ function ProductOptionsSection({ product }: { product: Product }) {
 
   const addValueMutation = useMutation({
     ...addProductOptionValueMutation,
-    onSuccess: (_data, variables) => {
+    onSuccess: (value, variables) => {
+      patchCachedProduct(product, (current) =>
+        productWithOptionValue(current, variables.option_id, value, variables.hex)
+      );
       setValueDrafts((prev) => ({
         ...prev,
-        [variables.option_id]: { name: '', hex: '#000000' }
+        [variables.option_id]: { name: '', hex: '#111111' }
       }));
       toast.success('Value added');
     },
@@ -219,6 +249,12 @@ function ProductOptionsSection({ product }: { product: Product }) {
 
   const removeValueMutation = useMutation({
     ...removeProductOptionValueMutation,
+    onMutate: ({ id }) => {
+      const snapshot = patchCachedProduct(product, (current) =>
+        productWithoutOptionValue(current, id)
+      );
+      return { snapshot };
+    },
     onSuccess: (result) => {
       setPendingDelete(null);
       const extra =
@@ -227,18 +263,24 @@ function ProductOptionsSection({ product }: { product: Product }) {
           : '';
       toast.success(`Value removed.${extra}`);
     },
-    onError: (error) => {
+    onError: (error, _vars, context) => {
+      restoreCachedProduct(product, context?.snapshot);
       toast.error(error instanceof Error ? error.message : 'Failed to remove value');
     }
   });
 
   const deleteOptionMutation = useMutation({
     ...deleteProductOptionMutation,
+    onMutate: ({ id }) => {
+      const snapshot = patchCachedProduct(product, (current) => productWithoutOption(current, id));
+      return { snapshot };
+    },
     onSuccess: () => {
       setPendingDelete(null);
       toast.success('Option removed');
     },
-    onError: (error) => {
+    onError: (error, _vars, context) => {
+      restoreCachedProduct(product, context?.snapshot);
       toast.error(error instanceof Error ? error.message : 'Failed to remove option');
     }
   });
@@ -268,14 +310,17 @@ function ProductOptionsSection({ product }: { product: Product }) {
       </CardHeader>
       <CardContent className='space-y-5'>
         <p className='text-muted-foreground text-sm'>
-          Up to 3 options. Color values can include a hex swatch for the storefront.
+          Up to 3 options. Color photos are uploaded once per color and shared by every size.
         </p>
 
         {product.options.length > 0 ? (
           <div className='space-y-4'>
             {product.options.map((option) => {
-              const draft = valueDrafts[option.id] ?? { name: '', hex: '#000000' };
+              const draft = valueDrafts[option.id] ?? { name: '', hex: '#111111' };
               const isColor = isColorOptionName(option.name);
+              const values = isSizeOptionName(option.name)
+                ? sortSizeValues(option.values)
+                : option.values;
               return (
                 <div key={option.id} className='space-y-3 rounded-md border p-3'>
                   <div className='flex items-center justify-between gap-3'>
@@ -299,22 +344,24 @@ function ProductOptionsSection({ product }: { product: Product }) {
                       <Icons.trash className='size-4' />
                     </Button>
                   </div>
-                  <ul className='flex flex-wrap gap-2'>
-                    {option.values.map((value) => {
-                      const hex =
-                        typeof value.metadata?.hex === 'string' ? value.metadata.hex : null;
-                      return (
+                  {isColor ? (
+                    <ul className='space-y-3'>
+                      {values.map((value) => (
+                        <ColorValueRow
+                          key={value.id}
+                          product={product}
+                          value={value}
+                          onRemove={() => void requestDeleteValue(value.id, value.name)}
+                        />
+                      ))}
+                    </ul>
+                  ) : (
+                    <ul className='flex flex-wrap gap-2'>
+                      {values.map((value) => (
                         <li
                           key={value.id}
                           className='flex items-center gap-2 rounded-full border px-3 py-1 text-sm'
                         >
-                          {hex ? (
-                            <span
-                              className='size-3 rounded-full border'
-                              style={{ backgroundColor: hex }}
-                              aria-hidden
-                            />
-                          ) : null}
                           <span>{value.name}</span>
                           <button
                             type='button'
@@ -325,29 +372,33 @@ function ProductOptionsSection({ product }: { product: Product }) {
                             <Icons.close className='size-3.5' />
                           </button>
                         </li>
-                      );
-                    })}
-                  </ul>
-                  <div className='grid gap-3 sm:grid-cols-[1fr_auto_auto]'>
+                      ))}
+                    </ul>
+                  )}
+                  <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
                     <Input
                       value={draft.name}
                       placeholder={isColor ? 'Cream' : 'Add value'}
-                      onChange={(event) =>
+                      className='sm:flex-1'
+                      onChange={(event) => {
+                        const name = event.target.value;
+                        const presetHex = isColor ? hexForColorName(name) : null;
                         setValueDrafts((prev) => ({
                           ...prev,
-                          [option.id]: { ...draft, name: event.target.value }
-                        }))
-                      }
+                          [option.id]: {
+                            name,
+                            hex: presetHex ?? draft.hex
+                          }
+                        }));
+                      }}
                     />
                     {isColor ? (
-                      <Input
-                        type='color'
-                        className='h-9 w-16 cursor-pointer'
+                      <ColorSwatchPicker
                         value={draft.hex}
-                        onChange={(event) =>
+                        onChange={(hex) =>
                           setValueDrafts((prev) => ({
                             ...prev,
-                            [option.id]: { ...draft, hex: event.target.value }
+                            [option.id]: { ...draft, hex }
                           }))
                         }
                       />
@@ -444,383 +495,181 @@ function ProductOptionsSection({ product }: { product: Product }) {
   );
 }
 
-function ProductVariantsSection({ product }: { product: Product }) {
-  const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [drafts, setDrafts] = useState<
-    Record<string, { price: number; compare: number | ''; stock: number; barcode: string }>
-  >({});
-  const [bulkPrice, setBulkPrice] = useState<number | ''>('');
-  const [bulkStock, setBulkStock] = useState<number | ''>('');
-  const [mediaFor, setMediaFor] = useState<string | null>(null);
+function ColorValueRow({
+  product,
+  value,
+  onRemove
+}: {
+  product: Product;
+  value: ProductOptionValue;
+  onRemove: () => void;
+}) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const hex = typeof value.metadata?.hex === 'string' ? value.metadata.hex : '#111111';
 
-  const generateMutation = useMutation({
-    ...generateProductVariantsMutation,
-    onSuccess: (result) => {
-      toast.success(
-        result.created === 0
-          ? 'No new combinations to create'
-          : `Generated ${result.created} variants`
+  const addImageMutation = useMutation({
+    ...addProductImageMutation,
+    onSuccess: (image) => {
+      patchCachedProduct(product, (current) => productWithImage(current, image));
+    },
+    onError: (error) => {
+      if (error instanceof Error && error.message.includes('already attached')) return;
+      toast.error(error instanceof Error ? error.message : 'Failed to add image');
+    }
+  });
+
+  const hexMutation = useMutation({
+    ...updateProductOptionValueMutation,
+    onMutate: ({ hex: nextHex }) => {
+      const snapshot = patchCachedProduct(product, (current) =>
+        productWithUpdatedOptionValue(current, value.id, { hex: nextHex })
       );
+      return { snapshot };
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to generate variants');
-    }
-  });
-
-  const upsertMutation = useMutation({
-    ...upsertProductVariantMutation,
-    onSuccess: () => {
-      toast.success('Variant saved');
-    },
-    onError: (error) => {
-      toast.error('Failed to save variant', {
-        description: error instanceof Error ? error.message : 'Please try again.'
-      });
-    }
-  });
-
-  const inventoryMutation = useMutation({
-    ...setVariantInventoryMutation,
-    onSuccess: () => toast.success('Inventory updated'),
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to update inventory');
-    }
-  });
-
-  const deleteMutation = useMutation({
-    ...deleteProductVariantMutation,
-    onSuccess: () => toast.success('Variant removed'),
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to remove variant');
+    onError: (error, _vars, context) => {
+      restoreCachedProduct(product, context?.snapshot);
+      toast.error(error instanceof Error ? error.message : 'Failed to update color');
     }
   });
 
   const mediaMutation = useMutation({
-    ...setVariantMediaMutation,
-    onSuccess: () => {
-      setMediaFor(null);
-      toast.success('Variant media updated');
+    ...setOptionValueMediaMutation,
+    onMutate: ({ mediaAssetIds }) => {
+      const snapshot = patchCachedProduct(product, (current) =>
+        productWithOptionValueMedia(current, value.id, mediaAssetIds)
+      );
+      return { snapshot };
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to update media');
+    onSuccess: () => toast.success(`${value.name} photos updated`),
+    onError: (error, _vars, context) => {
+      restoreCachedProduct(product, context?.snapshot);
+      toast.error(error instanceof Error ? error.message : 'Failed to update color photos');
     }
   });
 
-  const expected = generateOptionCombinations(product.options);
-  const existingKeys = new Set(
-    product.variants.map((variant) =>
-      variant.option_values.map((value) => value.value_id).join(':')
-    )
-  );
-  const missing = expected.filter((combo) => !existingKeys.has(combinationKey(combo))).length;
-
-  const selectedIds = Object.entries(selected)
-    .filter(([, value]) => value)
-    .map(([id]) => id);
-
-  function draftFor(variant: Product['variants'][number]) {
-    return (
-      drafts[variant.id] ?? {
-        price: variant.price,
-        compare: variant.compare_at_price ?? '',
-        stock: variant.stock_quantity,
-        barcode: variant.barcode ?? ''
+  async function ensureProductImages(assets: MediaAsset[]) {
+    let sortOrder = product.images.length;
+    for (const asset of assets) {
+      const alreadyOnProduct = product.images.some((image) => image.media_asset_id === asset.id);
+      if (alreadyOnProduct) continue;
+      try {
+        await addImageMutation.mutateAsync({
+          product_id: product.id,
+          url: asset.url,
+          public_id: asset.public_id,
+          alt: asset.alt || `${product.name} ${value.name}`,
+          sort_order: sortOrder,
+          media_asset_id: asset.id
+        });
+        sortOrder += 1;
+      } catch (error) {
+        if (!(error instanceof Error) || !error.message.includes('already attached')) {
+          throw error;
+        }
       }
-    );
+    }
   }
 
-  const libraryImages = useMemo(
-    () => product.images.filter((image) => image.media_asset_id),
-    [product.images]
-  );
-
   return (
-    <Card>
-      <CardHeader className='flex flex-row flex-wrap items-center justify-between gap-3 space-y-0'>
-        <CardTitle className='text-lg'>Variants & inventory</CardTitle>
-        <Button
+    <li className='space-y-2 rounded-md border px-3 py-2'>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <div className='flex min-w-0 flex-1 flex-wrap items-center gap-2'>
+          <span className='text-sm font-medium'>{value.name}</span>
+          <ColorSwatchPicker
+            value={hex}
+            disabled={hexMutation.isPending}
+            onChange={(nextHex) =>
+              hexMutation.mutate({
+                value_id: value.id,
+                hex: nextHex
+              })
+            }
+          />
+        </div>
+        <button
           type='button'
-          className='cursor-pointer'
-          disabled={expected.length === 0 || generateMutation.isPending || !product.sku}
-          isLoading={generateMutation.isPending}
-          onClick={() => generateMutation.mutate(product.id)}
+          className='text-muted-foreground hover:text-foreground cursor-pointer'
+          aria-label={`Remove ${value.name}`}
+          onClick={onRemove}
         >
-          Generate combinations
-        </Button>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        <p className='text-muted-foreground text-sm'>
-          {product.sku ? `Product SKU ${product.sku}. ` : 'Save a product SKU first. '}
-          {expected.length > 0
-            ? `${expected.length} possible combinations${missing > 0 ? ` · ${missing} not created yet` : ''}.`
-            : 'Add option values, then generate combinations.'}
-        </p>
-
-        {product.variants.length > 0 ? (
-          <div className='space-y-3'>
-            {selectedIds.length > 0 ? (
-              <div className='flex flex-wrap items-end gap-2 rounded-md border p-3'>
-                <p className='w-full text-sm font-medium'>{selectedIds.length} selected</p>
-                <div className='space-y-1'>
-                  <Label className='text-xs'>Bulk price</Label>
-                  <Input
-                    type='number'
-                    min={0}
-                    className='w-28'
-                    value={bulkPrice}
-                    onChange={(event) =>
-                      setBulkPrice(event.target.value === '' ? '' : Number(event.target.value))
-                    }
+          <Icons.close className='size-3.5' />
+        </button>
+      </div>
+      <ul className='flex flex-wrap items-center gap-2'>
+        {value.media_asset_ids.map((assetId) => {
+          const image = imageForMediaAsset(product, assetId);
+          return (
+            <li key={assetId} className='relative'>
+              <span className='relative block size-12 overflow-hidden rounded-md border'>
+                {image ? (
+                  <Image
+                    src={image.url}
+                    alt={image.alt || value.name}
+                    fill
+                    className='object-cover'
+                    sizes='48px'
                   />
-                </div>
-                <div className='space-y-1'>
-                  <Label className='text-xs'>Bulk stock</Label>
-                  <Input
-                    type='number'
-                    min={0}
-                    className='w-24'
-                    value={bulkStock}
-                    onChange={(event) =>
-                      setBulkStock(event.target.value === '' ? '' : Number(event.target.value))
-                    }
-                  />
-                </div>
-                <Button
-                  type='button'
-                  size='sm'
-                  className='cursor-pointer'
-                  disabled={upsertMutation.isPending || inventoryMutation.isPending}
-                  onClick={() => {
-                    void (async () => {
-                      for (const id of selectedIds) {
-                        const variant = product.variants.find((item) => item.id === id);
-                        if (!variant) continue;
-                        if (bulkPrice !== '') {
-                          await upsertMutation.mutateAsync({
-                            product_id: product.id,
-                            variant_id: variant.id,
-                            price: Number(bulkPrice),
-                            compare_at_price: variant.compare_at_price,
-                            option_value_ids: variant.option_values.map((value) => value.value_id),
-                            stock_quantity:
-                              bulkStock === '' ? variant.stock_quantity : Number(bulkStock)
-                          });
-                        } else if (bulkStock !== '') {
-                          await inventoryMutation.mutateAsync({
-                            variantId: variant.id,
-                            onHand: Number(bulkStock)
-                          });
-                        }
-                      }
-                      setSelected({});
-                      setBulkPrice('');
-                      setBulkStock('');
-                    })();
-                  }}
-                >
-                  Apply
-                </Button>
-              </div>
-            ) : null}
-
-            <ul className='space-y-3'>
-              {product.variants.map((variant) => {
-                const status = stockStatusLabel(variant.stock_quantity);
-                const draft = draftFor(variant);
-                const isSelected = Boolean(selected[variant.id]);
-                return (
-                  <li key={variant.id} className='space-y-3 rounded-md border px-3 py-3 text-sm'>
-                    <div className='flex flex-wrap items-start justify-between gap-3'>
-                      <label className='flex items-center gap-2'>
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={(value) =>
-                            setSelected((prev) => ({ ...prev, [variant.id]: value === true }))
-                          }
-                        />
-                        <span className='font-medium'>{variantDisplayName(variant)}</span>
-                        {variant.status === 'archived' ? (
-                          <StatusBadge tone='warning'>Archived</StatusBadge>
-                        ) : (
-                          <StatusBadge
-                            tone={
-                              status.tone === 'out'
-                                ? 'danger'
-                                : status.tone === 'low'
-                                  ? 'warning'
-                                  : 'success'
-                            }
-                          >
-                            {status.label} · {variant.stock_quantity}
-                          </StatusBadge>
-                        )}
-                      </label>
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon'
-                        className='size-8 cursor-pointer'
-                        disabled={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate(variant.id)}
-                        aria-label={`Remove ${variantDisplayName(variant)}`}
-                      >
-                        <Icons.trash className='size-4' />
-                      </Button>
-                    </div>
-
-                    <div className='grid gap-3 md:grid-cols-2 lg:grid-cols-4'>
-                      <div className='space-y-1'>
-                        <Label className='text-xs'>Price</Label>
-                        <Input
-                          type='number'
-                          min={0}
-                          value={draft.price}
-                          onChange={(event) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [variant.id]: { ...draft, price: Number(event.target.value) || 0 }
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className='space-y-1'>
-                        <Label className='text-xs'>Compare at</Label>
-                        <Input
-                          type='number'
-                          min={0}
-                          value={draft.compare}
-                          onChange={(event) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [variant.id]: {
-                                ...draft,
-                                compare: event.target.value === '' ? '' : Number(event.target.value)
-                              }
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className='space-y-1'>
-                        <Label className='text-xs'>Barcode</Label>
-                        <Input
-                          value={draft.barcode}
-                          onChange={(event) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [variant.id]: { ...draft, barcode: event.target.value }
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className='space-y-1'>
-                        <Label className='text-xs'>Inventory</Label>
-                        <Input
-                          type='number'
-                          min={0}
-                          value={draft.stock}
-                          onChange={(event) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [variant.id]: { ...draft, stock: Number(event.target.value) || 0 }
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className='flex flex-wrap gap-2'>
-                      <Button
-                        type='button'
-                        size='sm'
-                        className='cursor-pointer'
-                        disabled={upsertMutation.isPending}
-                        isLoading={upsertMutation.isPending}
-                        onClick={() =>
-                          upsertMutation.mutate({
-                            product_id: product.id,
-                            variant_id: variant.id,
-                            price: draft.price,
-                            compare_at_price: draft.compare === '' ? null : Number(draft.compare),
-                            barcode: draft.barcode.trim() || null,
-                            stock_quantity: draft.stock,
-                            option_value_ids: variant.option_values.map((value) => value.value_id)
-                          })
-                        }
-                      >
-                        Save variant
-                      </Button>
-                      <Button
-                        type='button'
-                        size='sm'
-                        variant='outline'
-                        className='cursor-pointer'
-                        onClick={() => setMediaFor(mediaFor === variant.id ? null : variant.id)}
-                      >
-                        Media
-                      </Button>
-                      <p className='text-muted-foreground self-center text-xs'>
-                        {formatProductPrice(variant.price)}
-                      </p>
-                    </div>
-
-                    {mediaFor === variant.id ? (
-                      <div className='space-y-2 rounded-md border p-3'>
-                        <p className='text-xs font-medium'>Associate product images</p>
-                        {libraryImages.length === 0 ? (
-                          <p className='text-muted-foreground text-xs'>
-                            Attach images with a media library asset first.
-                          </p>
-                        ) : (
-                          <ul className='flex flex-wrap gap-2'>
-                            {libraryImages.map((image) => {
-                              const assetId = image.media_asset_id!;
-                              const checked = variant.media_asset_ids.includes(assetId);
-                              return (
-                                <li key={image.id}>
-                                  <button
-                                    type='button'
-                                    className='relative size-14 overflow-hidden rounded-md border'
-                                    onClick={() => {
-                                      const next = checked
-                                        ? variant.media_asset_ids.filter((id) => id !== assetId)
-                                        : [...variant.media_asset_ids, assetId];
-                                      mediaMutation.mutate({
-                                        variantId: variant.id,
-                                        mediaAssetIds: next
-                                      });
-                                    }}
-                                  >
-                                    <Image
-                                      src={image.url}
-                                      alt={image.alt || product.name}
-                                      fill
-                                      className='object-cover'
-                                      sizes='56px'
-                                    />
-                                    {checked ? (
-                                      <span className='bg-background/80 absolute inset-0 flex items-center justify-center'>
-                                        <Icons.check className='size-4' />
-                                      </span>
-                                    ) : null}
-                                  </button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </div>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ) : (
-          <p className='text-muted-foreground text-sm'>
-            No variants yet. Generate combinations after options are defined.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+                ) : (
+                  <span className='bg-muted absolute inset-0' />
+                )}
+              </span>
+              <button
+                type='button'
+                className='bg-background absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full border'
+                aria-label={`Remove photo from ${value.name}`}
+                disabled={mediaMutation.isPending}
+                onClick={() =>
+                  mediaMutation.mutate({
+                    optionValueId: value.id,
+                    mediaAssetIds: value.media_asset_ids.filter((id) => id !== assetId)
+                  })
+                }
+              >
+                <Icons.close className='size-3' />
+              </button>
+            </li>
+          );
+        })}
+        <li>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='h-12 cursor-pointer px-2 text-xs'
+            onClick={() => setPickerOpen(true)}
+          >
+            <Icons.media className='size-3.5' />
+            Photos
+          </Button>
+        </li>
+      </ul>
+      <MediaPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        excludePublicIds={product.images
+          .filter(
+            (image) => image.media_asset_id && value.media_asset_ids.includes(image.media_asset_id)
+          )
+          .map((image) => image.public_id)
+          .filter((id): id is string => Boolean(id))}
+        onSelect={(assets) => {
+          void (async () => {
+            try {
+              await ensureProductImages(assets);
+              const nextIds = [...value.media_asset_ids];
+              for (const asset of assets) {
+                if (!nextIds.includes(asset.id)) nextIds.push(asset.id);
+              }
+              await mediaMutation.mutateAsync({
+                optionValueId: value.id,
+                mediaAssetIds: nextIds
+              });
+            } catch {
+              // toasts from mutation onError
+            }
+          })();
+        }}
+      />
+    </li>
   );
 }

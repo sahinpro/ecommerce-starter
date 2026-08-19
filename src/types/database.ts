@@ -70,6 +70,8 @@ export interface ProductRow {
   composition: string | null;
   care: string | null;
   size_fit: string | null;
+  size_fit_image_id: string | null;
+  size_fit_image_url: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -283,6 +285,8 @@ type Tables = {
       composition?: string | null;
       care?: string | null;
       size_fit?: string | null;
+      size_fit_image_id?: string | null;
+      size_fit_image_url?: string | null;
       created_at?: string;
       updated_at?: string;
       deleted_at?: string | null;
@@ -302,6 +306,8 @@ type Tables = {
       composition?: string | null;
       care?: string | null;
       size_fit?: string | null;
+      size_fit_image_id?: string | null;
+      size_fit_image_url?: string | null;
       updated_at?: string;
       deleted_at?: string | null;
     };
@@ -552,6 +558,10 @@ export type Database = {
       };
       set_variant_media: {
         Args: { p_variant_id: string; p_media_asset_ids: string[] };
+        Returns: undefined;
+      };
+      set_option_value_media: {
+        Args: { p_option_value_id: string; p_media_asset_ids: string[] };
         Returns: undefined;
       };
       variant_available_quantity: {

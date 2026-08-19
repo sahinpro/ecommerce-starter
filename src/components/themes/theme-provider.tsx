@@ -1,7 +1,15 @@
 'use client';
 
-import { ThemeProvider as NextThemesProvider, ThemeProviderProps } from 'next-themes';
+import { usePathname } from 'next/navigation';
+import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from 'next-themes';
 
 export default function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+  const pathname = usePathname();
+  const forceLight = !pathname.startsWith('/dashboard') && !pathname.startsWith('/auth');
+
+  return (
+    <NextThemesProvider {...props} forcedTheme={forceLight ? 'light' : undefined}>
+      {children}
+    </NextThemesProvider>
+  );
 }

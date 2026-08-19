@@ -40,6 +40,7 @@ export type ProductOptionValue = {
   name: string;
   position: number;
   metadata: Record<string, unknown> | null;
+  media_asset_ids: string[];
 };
 
 export type ProductOption = {
@@ -110,6 +111,8 @@ export type Product = {
   composition: string | null;
   care: string | null;
   size_fit: string | null;
+  size_fit_image_id: string | null;
+  size_fit_image_url: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -181,6 +184,8 @@ export type ProductMutationPayload = {
   composition?: string | null;
   care?: string | null;
   size_fit?: string | null;
+  size_fit_image_id?: string | null;
+  size_fit_image_url?: string | null;
 };
 
 export type ProductImageMutationPayload = {

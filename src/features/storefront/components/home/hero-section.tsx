@@ -7,7 +7,7 @@ export async function HeroSection() {
   const hero = await getHeroContent();
 
   return (
-    <section className='relative h-svh w-full overflow-hidden pb-40 lg:h-220'>
+    <section className='relative h-screen w-full overflow-hidden pb-40 '>
       <Image
         src={hero.image_url}
         alt={hero.title}

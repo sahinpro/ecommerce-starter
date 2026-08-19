@@ -20,6 +20,8 @@ import { productFormSchema, type ProductFormValues } from '@/features/products/s
 import { createProductMutation, updateProductMutation } from '../api/mutations';
 import { categoriesQueryOptions } from '../api/queries';
 import type { Product, ProductMutationPayload } from '../api/types';
+import { ProductDetailImageField } from './product-detail-image-field';
+import { ProductLivePreview } from './product-live-preview';
 import { ProductNestedSections } from './product-nested-sections';
 
 function toMutationPayload(value: ProductFormValues): ProductMutationPayload {
@@ -40,7 +42,9 @@ function toMutationPayload(value: ProductFormValues): ProductMutationPayload {
         : Number(value.compare_at_price),
     composition: value.composition.trim() || null,
     care: value.care.trim() || null,
-    size_fit: value.size_fit.trim() || null
+    size_fit: value.size_fit.trim() || null,
+    size_fit_image_id: value.size_fit_image_id.trim() || null,
+    size_fit_image_url: value.size_fit_image_url.trim() || null
   };
 }
 
@@ -114,7 +118,9 @@ export default function ProductForm({
       compare_at_price: initialData?.compare_at_price ?? '',
       composition: initialData?.composition ?? '',
       care: initialData?.care ?? '',
-      size_fit: initialData?.size_fit ?? ''
+      size_fit: initialData?.size_fit ?? '',
+      size_fit_image_id: initialData?.size_fit_image_id ?? '',
+      size_fit_image_url: initialData?.size_fit_image_url ?? ''
     } as ProductFormValues,
     validators: {
       onSubmit: productFormSchema
@@ -264,6 +270,18 @@ export default function ProductForm({
                       rows={3}
                     />
                   </div>
+                  <form.Subscribe selector={(state) => state.values.size_fit_image_url}>
+                    {(imageUrl) => (
+                      <ProductDetailImageField
+                        label='Size & fit image'
+                        imageUrl={imageUrl}
+                        onChange={(next) => {
+                          form.setFieldValue('size_fit_image_id', next?.id ?? '');
+                          form.setFieldValue('size_fit_image_url', next?.url ?? '');
+                        }}
+                      />
+                    )}
+                  </form.Subscribe>
                 </CardContent>
               </Card>
 
@@ -298,6 +316,27 @@ export default function ProductForm({
                   <FormSwitchField name='featured' label='Featured product' />
                 </CardContent>
               </Card>
+
+              <form.Subscribe
+                selector={(state) => ({
+                  name: state.values.name,
+                  price: state.values.price,
+                  compareAtPrice: state.values.compare_at_price,
+                  badge: state.values.badge,
+                  status: state.values.status
+                })}
+              >
+                {(values) => (
+                  <ProductLivePreview
+                    name={values.name}
+                    price={values.price}
+                    compareAtPrice={values.compareAtPrice}
+                    badge={values.badge}
+                    status={values.status}
+                    product={initialData}
+                  />
+                )}
+              </form.Subscribe>
 
               <div className='bg-card flex justify-end gap-2 rounded-lg border p-3'>
                 <Button type='button' variant='outline' onClick={() => router.back()}>

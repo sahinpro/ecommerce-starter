@@ -4,8 +4,8 @@ import { requireAdminUser } from '@/lib/auth/session';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-import type { OrderStatus } from './constants';
-import { isOrderStatus } from './constants';
+import { isOrderStatus, type OrderStatus } from './constants';
+import { isYmd, endOfStoreDayIso, startOfStoreDayIso } from './date-range';
 import type {
   GuestCustomer,
   Order,
@@ -184,6 +184,14 @@ export async function listOrders(filters: OrderFilters = {}): Promise<OrdersList
     query = query.or(
       `order_number.ilike.%${q}%,customer_name.ilike.%${q}%,customer_phone.ilike.%${q}%`
     );
+  }
+
+  if (isYmd(filters.date_from)) {
+    query = query.gte('created_at', startOfStoreDayIso(filters.date_from));
+  }
+
+  if (isYmd(filters.date_to)) {
+    query = query.lte('created_at', endOfStoreDayIso(filters.date_to));
   }
 
   const { data, error, count } = await query;

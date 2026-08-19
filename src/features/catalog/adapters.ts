@@ -1,4 +1,11 @@
 import { availableQuantity } from './inventory';
+import {
+  colorOptionOf,
+  compareApparelSizes,
+  isSizeOptionName,
+  sortSizeValues,
+  variantColorValueId
+} from './variant-engine';
 import type {
   Category,
   FilterOptions,
@@ -14,12 +21,18 @@ import type {
 
 type CategoryJoin = { slug: string; name: string } | { slug: string; name: string }[] | null;
 
+type OptionValueMediaJoin = {
+  media_asset_id: string;
+  sort_order?: number;
+};
+
 type OptionValueJoin = {
   id: string;
   option_id?: string;
   name: string;
   position?: number;
   metadata?: Record<string, unknown> | null;
+  product_option_value_media?: OptionValueMediaJoin[] | null;
 };
 
 type OptionJoin = {
@@ -71,6 +84,8 @@ type ProductJoinRow = {
   composition: string | null;
   care: string | null;
   size_fit: string | null;
+  size_fit_image_id?: string | null;
+  size_fit_image_url?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -100,13 +115,23 @@ function optionHex(metadata: Record<string, unknown> | null | undefined): string
   return '#000000';
 }
 
+function mapMediaIds(
+  rows: OptionValueMediaJoin[] | VariantMediaJoin[] | null | undefined
+): string[] {
+  return (rows ?? [])
+    .toSorted((a, b) => asNumber(a.sort_order) - asNumber(b.sort_order))
+    .map((item) => item.media_asset_id)
+    .filter(Boolean);
+}
+
 function asOptionValue(row: OptionValueJoin, fallbackOptionId: string): ProductOptionValue {
   return {
     id: row.id,
     option_id: row.option_id ?? fallbackOptionId,
     name: row.name,
     position: asNumber(row.position),
-    metadata: row.metadata ?? null
+    metadata: row.metadata ?? null,
+    media_asset_ids: mapMediaIds(row.product_option_value_media)
   };
 }
 
@@ -117,9 +142,12 @@ function mapOptions(rows: OptionJoin[] | null | undefined, productId: string): P
       product_id: option.product_id ?? productId,
       name: option.name,
       position: asNumber(option.position),
-      values: (option.product_option_values ?? [])
-        .map((value) => asOptionValue(value, option.id))
-        .toSorted((a, b) => a.position - b.position || a.name.localeCompare(b.name))
+      values: (() => {
+        const mapped = (option.product_option_values ?? [])
+          .map((value) => asOptionValue(value, option.id))
+          .toSorted((a, b) => a.position - b.position || a.name.localeCompare(b.name));
+        return isSizeOptionName(option.name) ? sortSizeValues(mapped) : mapped;
+      })()
     }))
     .toSorted((a, b) => a.position - b.position || a.name.localeCompare(b.name));
 }
@@ -205,12 +233,12 @@ function deriveSizes(options: ProductOption[], variants: ProductVariant[]): stri
       )
     );
     const names = sizeOption.values.map((value) => value.name);
-    return (used.size > 0 ? names.filter((name) => used.has(name)) : names).toSorted((a, b) =>
-      a.localeCompare(b)
+    return (used.size > 0 ? names.filter((name) => used.has(name)) : names).toSorted(
+      compareApparelSizes
     );
   }
   return Array.from(new Set(active.map((variant) => variant.size).filter(Boolean))).toSorted(
-    (a, b) => a.localeCompare(b)
+    compareApparelSizes
   );
 }
 
@@ -220,12 +248,19 @@ export function toCatalogProduct(row: ProductJoinRow): Product {
   const options = mapOptions(row.product_options, row.id);
   const productSku = (row.sku ?? '').trim();
 
+  const colorOption = colorOptionOf(options);
+  const colorMediaByValueId = new Map(
+    (colorOption?.values ?? []).map((value) => [value.id, value.media_asset_ids] as const)
+  );
+
   const variants: ProductVariant[] = (row.product_variants ?? []).map((variant) => {
     const optionValues = mapVariantOptionValues(variant.product_variant_option_values, options);
-    const media = (variant.product_variant_media ?? [])
-      .toSorted((a, b) => asNumber(a.sort_order) - asNumber(b.sort_order))
-      .map((item) => item.media_asset_id)
-      .filter(Boolean);
+    const legacyMedia = mapMediaIds(variant.product_variant_media);
+    const colorId =
+      variant.color_id ??
+      optionValues.find((value) => value.option_name.toLowerCase() === 'color')?.value_id ??
+      null;
+    const colorMedia = colorId ? colorMediaByValueId.get(colorId) : undefined;
     return {
       id: variant.id,
       product_id: variant.product_id,
@@ -235,10 +270,7 @@ export function toCatalogProduct(row: ProductJoinRow): Product {
         variant.size ??
         optionValues.find((value) => value.option_name.toLowerCase() === 'size')?.value_name ??
         '',
-      color_id:
-        variant.color_id ??
-        optionValues.find((value) => value.option_name.toLowerCase() === 'color')?.value_id ??
-        null,
+      color_id: colorId,
       price: asNumber(variant.price),
       compare_at_price:
         variant.compare_at_price === null || variant.compare_at_price === undefined
@@ -247,7 +279,7 @@ export function toCatalogProduct(row: ProductJoinRow): Product {
       stock_quantity: availableQuantity(asNumber(variant.stock_quantity), 0),
       status: variant.status === 'archived' ? 'archived' : 'active',
       option_values: optionValues,
-      media_asset_ids: media
+      media_asset_ids: colorMedia && colorMedia.length > 0 ? colorMedia : legacyMedia
     };
   });
 
@@ -295,6 +327,8 @@ export function toCatalogProduct(row: ProductJoinRow): Product {
     composition: row.composition,
     care: row.care,
     size_fit: row.size_fit,
+    size_fit_image_id: row.size_fit_image_id ?? null,
+    size_fit_image_url: row.size_fit_image_url ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
     deleted_at: row.deleted_at
@@ -319,7 +353,7 @@ export function buildFilterOptions(products: Product[]): FilterOptions {
   }
 
   return {
-    sizes: Array.from(sizeSet).toSorted(),
+    sizes: Array.from(sizeSet).toSorted(compareApparelSizes),
     product_types: Array.from(typeSet).toSorted(),
     colors: Array.from(colorMap.entries()).map(([name, hex]) => ({ name, hex }))
   };
@@ -342,7 +376,58 @@ export function variantDisplayName(variant: ProductVariant): string {
   return variantTitle(variant);
 }
 
+export function imagesForColor(
+  product: Product,
+  colorId: string | null | undefined
+): ProductImage[] {
+  if (!colorId) return product.images;
+  const colorOption = colorOptionOf(product.options);
+  const colorValue = colorOption?.values.find((value) => value.id === colorId);
+  const mediaIds = new Set(
+    colorValue?.media_asset_ids.length
+      ? colorValue.media_asset_ids
+      : product.variants
+          .filter((variant) => variantColorValueId(variant, colorOption) === colorId)
+          .flatMap((variant) => variant.media_asset_ids)
+  );
+  if (mediaIds.size === 0) return product.images;
+  const matched = product.images.filter(
+    (image) => image.media_asset_id && mediaIds.has(image.media_asset_id)
+  );
+  return matched.length > 0 ? matched : product.images;
+}
+
+export function imageForMediaAsset(
+  product: Product,
+  mediaAssetId: string | undefined
+): ProductImage | undefined {
+  if (!mediaAssetId) return undefined;
+  return product.images.find((image) => image.media_asset_id === mediaAssetId);
+}
+
 export const PRODUCT_DETAIL_SELECT = `
+  *,
+  categories ( slug, name ),
+  product_images ( * ),
+  product_colors ( * ),
+  product_options (
+    *,
+    product_option_values (
+      *,
+      product_option_value_media ( media_asset_id, sort_order )
+    )
+  ),
+  product_variants (
+    *,
+    product_variant_option_values (
+      option_value_id,
+      product_option_values ( id, name, position, metadata, option_id )
+    ),
+    product_variant_media ( media_asset_id, sort_order )
+  )
+`;
+
+export const PRODUCT_DETAIL_SELECT_LEGACY = `
   *,
   categories ( slug, name ),
   product_images ( * ),

@@ -12,6 +12,8 @@ export type MediaAsset = {
   updated_at: string;
   /** Populated on list when requested */
   usage_count?: number;
+  /** True for storefront files in /public/sukoon — shown in the library, never deleted */
+  locked?: boolean;
 };
 
 export type MediaAssetCreateInput = {

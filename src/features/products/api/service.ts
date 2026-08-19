@@ -24,7 +24,7 @@ export {
   removeProductOptionValue,
   setPrimaryProductImage,
   setVariantInventory,
-  setVariantMedia,
+  setOptionValueMedia,
   updateProduct,
   updateProductOptionValue,
   upsertProductVariant
