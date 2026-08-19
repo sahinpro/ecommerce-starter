@@ -57,7 +57,6 @@ SQL: apply additive files in [`supabase/migrations/`](./supabase/migrations/) in
 |-----|---------|
 | [AGENTS.md](./AGENTS.md) | Agent conventions (dashboard patterns) |
 | [CLAUDE.md](./CLAUDE.md) | Project conventions |
-| [supabase/migrations/](./supabase/migrations/) | Additive database migrations |
 
 ## Notes
 
