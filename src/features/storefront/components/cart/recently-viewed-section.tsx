@@ -23,7 +23,7 @@ export function RecentlyViewedSection() {
   if (!isPending && products.length === 0) return null;
 
   return (
-    <section className='mx-auto max-w-container px-10 pt-16 pb-20'>
+    <section className='mx-auto max-w-container px-4 lg:px-6 pt-16 pb-20'>
       <h2 className='text-[15px] leading-4 font-bold tracking-[0.45px] uppercase'>
         Continue shopping with
       </h2>
@@ -42,7 +42,7 @@ function RecentlyViewedCardSkeleton() {
   return (
     <article aria-hidden>
       <Skeleton className='aspect-477/636 w-full rounded-none md:h-159 md:aspect-auto' />
-      <div className='mt-4 flex items-start justify-between gap-3 px-4'>
+      <div className='mt-4 flex items-start justify-between gap-3 pl-0 lg:px-4'>
         <Skeleton className='h-4 w-28 rounded-none' />
         <Skeleton className='h-4 w-14 rounded-none' />
       </div>

@@ -87,7 +87,14 @@ export function ProductPurchasePanel({
   const [internalColor, setInternalColor] = useState<ProductColor | undefined>(
     selectedColorProp ?? product.colors[0]
   );
-  const [selectedSize, setSelectedSize] = useState<string | undefined>(product.sizes[0]);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(() => {
+    const initialColor = selectedColorProp ?? product.colors[0];
+    const firstInStock = product.sizes.find((size) => {
+      const variant = findVariant(product, size, initialColor?.id);
+      return Boolean(variant && variant.stock_quantity >= 1);
+    });
+    return firstInStock ?? product.sizes[0];
+  });
   const selectedColor = colorControlled ? selectedColorProp : internalColor;
 
   useEffect(() => {
@@ -116,8 +123,16 @@ export function ProductPurchasePanel({
     selectedSize != null ? findVariant(product, selectedSize, selectedColor?.id) : undefined;
   const displayPrice = selectedVariant?.price ?? product.price;
   const displayCompare = selectedVariant?.compare_at_price ?? product.compare_at_price;
+  const isSelectedOutOfStock =
+    selectedSize != null && (!selectedVariant || selectedVariant.stock_quantity < 1);
+
+  function isSizeInStock(size: string): boolean {
+    const variant = findVariant(product, size, selectedColor?.id);
+    return Boolean(variant && variant.stock_quantity >= 1);
+  }
 
   function handleAddToCart() {
+    if (isSelectedOutOfStock) return;
     if (!selectedColor || !selectedSize) {
       toast.warning('Select options', {
         description: 'Please choose a size and color first.'
@@ -165,11 +180,24 @@ export function ProductPurchasePanel({
         </button>
       </div>
 
-      <div className='mt-6 flex items-center gap-3'>
-        {displayCompare ? (
-          <span className='text-muted-foreground line-through'>{formatPrice(displayCompare)}</span>
-        ) : null}
-        <span className='text-lg'>{formatPrice(displayPrice)}</span>
+      <div className='mt-6 min-h-7' aria-live='polite'>
+        {isSelectedOutOfStock ? (
+          <div>
+            <p className='text-lg'>Out of stock</p>
+            <p className='text-muted-foreground mt-1 text-sm'>
+              Size {selectedSize} is currently unavailable.
+            </p>
+          </div>
+        ) : (
+          <div className='flex items-center gap-3'>
+            {displayCompare ? (
+              <span className='text-muted-foreground line-through'>
+                {formatPrice(displayCompare)}
+              </span>
+            ) : null}
+            <span className='text-lg'>{formatPrice(displayPrice)}</span>
+          </div>
+        )}
       </div>
 
       {product.description ? (
@@ -192,31 +220,44 @@ export function ProductPurchasePanel({
         ) : null}
 
         {product.sizes.length > 0 ? (
-          <div className='flex flex-wrap gap-6'>
-            {product.sizes.map((size) => (
-              <button
-                key={size}
-                type='button'
-                onClick={() => setSelectedSize(size)}
-                className={cn(
-                  'text-sm transition-colors',
-                  selectedSize === size
-                    ? 'text-foreground underline underline-offset-4'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {size}
-              </button>
-            ))}
+          <div className='flex flex-wrap gap-6' role='group' aria-label='Size'>
+            {product.sizes.map((size) => {
+              const inStock = isSizeInStock(size);
+              const selected = selectedSize === size;
+              return (
+                <button
+                  key={size}
+                  type='button'
+                  onClick={() => setSelectedSize(size)}
+                  aria-pressed={selected}
+                  aria-label={inStock ? size : `${size}, out of stock`}
+                  className={cn(
+                    'text-sm transition-colors',
+                    !inStock && 'line-through decoration-1',
+                    selected
+                      ? 'text-foreground underline underline-offset-4'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {size}
+                </button>
+              );
+            })}
           </div>
         ) : null}
 
         <Button
           type='button'
           onClick={handleAddToCart}
-          className='h-11 w-full rounded-none tracking-wide uppercase'
+          disabled={isSelectedOutOfStock}
+          aria-disabled={isSelectedOutOfStock}
+          variant={isSelectedOutOfStock ? 'outline' : 'default'}
+          className={cn(
+            'h-11 w-full rounded-none tracking-wide uppercase',
+            isSelectedOutOfStock && 'disabled:opacity-100'
+          )}
         >
-          Add to Cart
+          {isSelectedOutOfStock ? 'Out of stock' : 'Add to Cart'}
         </Button>
       </div>
 

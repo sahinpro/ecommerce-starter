@@ -95,16 +95,50 @@ export function ShopListing({ category, title }: ShopListingProps) {
   }
 
   return (
-    <div className='px-6 py-8 md:px-6'>
+    <div className='px-4 py-8'>
       <ShopBreadcrumb
         items={
           category ? [{ label: 'Shop', href: '/shop' }, { label: title }] : [{ label: 'Shop' }]
         }
       />
-      <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-        <h1 className={cn('font-serif text-2xl', !search && 'capitalize')}>
-          {search ? `Results for “${search}”` : title}
-        </h1>
+      <div className='mb-8 flex flex-wrap items-center justify-between gap-4'>
+        <div className='flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-2'>
+          <h1 className={cn('font-serif text-2xl', !search && 'capitalize')}>
+            {search ? `Results for “${search}”` : title}
+          </h1>
+          {filterOptions.product_types.length > 0 ? (
+            <nav
+              aria-label='Product type'
+              className='flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] tracking-wide uppercase'
+            >
+              {filterOptions.product_types.map((type, index) => {
+                const active = Boolean(filters.product_types?.includes(type));
+                return (
+                  <span key={type} className='flex items-center gap-2'>
+                    {index > 0 ? <span className='text-muted-foreground' aria-hidden></span> : null}
+                    <button
+                      type='button'
+                      onClick={() => {
+                        const current = filters.product_types ?? [];
+                        const next = current.includes(type)
+                          ? current.filter((item) => item !== type)
+                          : [...current, type];
+                        void setParams({ types: next.join(',') });
+                      }}
+                      className={cn(
+                        active
+                          ? 'text-white bg-black border border-border hover:bg-black/80 px-1.5 py-0.5 rounded-sm'
+                          : 'text-muted-foreground hover:text-foreground bg-white px-1.5 py-0.5 rounded-sm border border-border'
+                      )}
+                    >
+                      {type}
+                    </button>
+                  </span>
+                );
+              })}
+            </nav>
+          ) : null}
+        </div>
         <div className='flex items-center justify-between gap-6 text-[13px] tracking-wide uppercase'>
           <button
             type='button'
@@ -154,50 +188,6 @@ export function ShopListing({ category, title }: ShopListingProps) {
         </div>
       </div>
 
-      {filterOptions.product_types.length > 0 ? (
-        <nav
-          aria-label='Product type'
-          className='mb-8 flex flex-wrap items-center gap-x-2 gap-y-2 text-[13px] tracking-wide uppercase'
-        >
-          <button
-            type='button'
-            onClick={() => void setParams({ types: '' })}
-            className={cn(
-              !filters.product_types?.length
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            Shop All
-          </button>
-          {filterOptions.product_types.map((type) => {
-            const active = Boolean(filters.product_types?.includes(type));
-            return (
-              <span key={type} className='flex items-center gap-2'>
-                <span className='text-muted-foreground' aria-hidden>
-                  ·
-                </span>
-                <button
-                  type='button'
-                  onClick={() => {
-                    const current = filters.product_types ?? [];
-                    const next = current.includes(type)
-                      ? current.filter((item) => item !== type)
-                      : [...current, type];
-                    void setParams({ types: next.join(',') });
-                  }}
-                  className={cn(
-                    active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {type}
-                </button>
-              </span>
-            );
-          })}
-        </nav>
-      ) : null}
-
       <Suspense fallback={<ProductGridSkeleton view={params.view} />}>
         <ShopProductGrid filters={filters} search={search} view={params.view} />
       </Suspense>
@@ -235,7 +225,7 @@ function ShopProductGrid({ filters, search, view }: ShopProductGridProps) {
 
 export function ShopListingSkeleton({ view = 'grid' }: { view?: ShopView }) {
   return (
-    <div className='px-6 py-8 md:px-6' aria-busy='true' aria-label='Loading products'>
+    <div className='px-4 py-8 ' aria-busy='true' aria-label='Loading products'>
       <div className='mb-8 flex flex-wrap items-center justify-between gap-4'>
         <Skeleton className='h-8 w-40 rounded-none' />
         <div className='flex items-center gap-6'>
@@ -268,7 +258,7 @@ function ProductCardSkeleton({ catalogue }: { catalogue: boolean }) {
           catalogue && 'aspect-477/718 md:h-auto md:aspect-477/718'
         )}
       />
-      <div className='mt-4 flex items-start justify-between gap-3 px-4'>
+      <div className='mt-4 flex items-start justify-between gap-3 pl-0 lg:px-4'>
         <Skeleton className='h-4 w-28 rounded-none' />
         <Skeleton className='h-4 w-14 rounded-none' />
       </div>
