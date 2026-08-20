@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 
 import { patchCachedProduct, productWithoutVariant, restoreCachedProduct } from '../api/cache';
 import {
+  catalogRevalidate,
   deleteProductVariantMutation,
   generateProductVariantsMutation,
   upsertProductVariantMutation
@@ -94,7 +95,7 @@ export function ProductVariantsSection({ product }: { product: Product }) {
 
   const deleteMutation = useMutation({
     ...deleteProductVariantMutation,
-    onMutate: (id) => {
+    onMutate: ({ id }) => {
       const snapshot = patchCachedProduct(product, (current) => productWithoutVariant(current, id));
       return { snapshot };
     },
@@ -139,7 +140,8 @@ export function ProductVariantsSection({ product }: { product: Product }) {
       compare_at_price: draft.compare === '' ? null : Number(draft.compare),
       barcode: variant.barcode,
       stock_quantity: draft.stock,
-      option_value_ids: variant.option_values.map((value) => value.value_id)
+      option_value_ids: variant.option_values.map((value) => value.value_id),
+      ...catalogRevalidate(product)
     });
     setDrafts((prev) => {
       const next = { ...prev };
@@ -157,7 +159,9 @@ export function ProductVariantsSection({ product }: { product: Product }) {
           className='cursor-pointer'
           disabled={expected.length === 0 || generateMutation.isPending || !product.sku}
           isLoading={generateMutation.isPending}
-          onClick={() => generateMutation.mutate(product.id)}
+          onClick={() =>
+            generateMutation.mutate({ productId: product.id, ...catalogRevalidate(product) })
+          }
         >
           Generate combinations
         </Button>
@@ -219,7 +223,8 @@ export function ProductVariantsSection({ product }: { product: Product }) {
                           compare_at_price: variant.compare_at_price,
                           barcode: variant.barcode,
                           option_value_ids: variant.option_values.map((value) => value.value_id),
-                          stock_quantity: nextStock
+                          stock_quantity: nextStock,
+                          ...catalogRevalidate(product)
                         });
                       }
                       setSelected({});
@@ -309,7 +314,12 @@ export function ProductVariantsSection({ product }: { product: Product }) {
                                 }
                                 onDraft={(patch) => setDraft(variant, patch)}
                                 onSave={() => void saveVariant(variant, draftFor(variant))}
-                                onDelete={() => deleteMutation.mutate(variant.id)}
+                                onDelete={() =>
+                                  deleteMutation.mutate({
+                                    id: variant.id,
+                                    ...catalogRevalidate(product)
+                                  })
+                                }
                               />
                             ))}
                           </ul>
@@ -334,7 +344,9 @@ export function ProductVariantsSection({ product }: { product: Product }) {
                       }
                       onDraft={(patch) => setDraft(variant, patch)}
                       onSave={() => void saveVariant(variant, draftFor(variant))}
-                      onDelete={() => deleteMutation.mutate(variant.id)}
+                      onDelete={() =>
+                        deleteMutation.mutate({ id: variant.id, ...catalogRevalidate(product) })
+                      }
                     />
                   </li>
                 ))}

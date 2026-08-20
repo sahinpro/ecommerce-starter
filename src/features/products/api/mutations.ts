@@ -34,109 +34,174 @@ import type {
   ProductVariantMutationPayload
 } from '@/features/catalog/types';
 
-function invalidateCatalog(slug?: string): void {
+export type CatalogRevalidate = {
+  productSlug: string;
+  categorySlug?: string | null;
+};
+
+export function catalogRevalidate(product: {
+  slug: string;
+  category_slug?: string | null;
+}): CatalogRevalidate {
+  return { productSlug: product.slug, categorySlug: product.category_slug };
+}
+
+function invalidateCatalog(slug?: string, categorySlug?: string | null): void {
   void getQueryClient().invalidateQueries({ queryKey: catalogKeys.all });
-  void revalidateCatalogAction(slug);
+  void revalidateCatalogAction(slug, categorySlug);
+}
+
+function invalidateFromVariables(
+  _data: unknown,
+  _error: unknown,
+  variables: CatalogRevalidate
+): void {
+  invalidateCatalog(variables.productSlug, variables.categorySlug);
 }
 
 export const createProductMutation = mutationOptions({
   mutationFn: (data: ProductMutationPayload) => createProduct(data),
-  onSettled: (product) => invalidateCatalog(product?.slug)
+  onSettled: (product) => invalidateCatalog(product?.slug, product?.category_slug)
 });
 
 export const updateProductMutation = mutationOptions({
   mutationFn: ({ id, values }: { id: string; values: Partial<ProductMutationPayload> }) =>
     updateProduct(id, values),
-  onSettled: (product) => invalidateCatalog(product?.slug)
+  onSettled: (product) => invalidateCatalog(product?.slug, product?.category_slug)
 });
 
 export const archiveProductMutation = mutationOptions({
-  mutationFn: (id: string) => archiveProduct(id),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({ id }: { id: string } & CatalogRevalidate) => archiveProduct(id),
+  onSettled: invalidateFromVariables
 });
 
 export const restoreProductMutation = mutationOptions({
-  mutationFn: (id: string) => restoreProduct(id),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({ id }: { id: string } & CatalogRevalidate) => restoreProduct(id),
+  onSettled: invalidateFromVariables
 });
 
 export const deleteProductMutation = mutationOptions({
-  mutationFn: (id: string) => deleteProduct(id),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({ id }: { id: string } & CatalogRevalidate) => deleteProduct(id),
+  onSettled: invalidateFromVariables
 });
 
 export const addProductImageMutation = mutationOptions({
-  mutationFn: (payload: ProductImageMutationPayload) => addProductImage(payload),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    productSlug: _productSlug,
+    categorySlug: _categorySlug,
+    ...payload
+  }: ProductImageMutationPayload & CatalogRevalidate) => addProductImage(payload),
+  onSettled: invalidateFromVariables
 });
 
 export const deleteProductImageMutation = mutationOptions({
-  mutationFn: (id: string) => deleteProductImage(id),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({ id }: { id: string } & CatalogRevalidate) => deleteProductImage(id),
+  onSettled: invalidateFromVariables
 });
 
 export const setPrimaryProductImageMutation = mutationOptions({
-  mutationFn: ({ productId, imageId }: { productId: string; imageId: string }) =>
-    setPrimaryProductImage(productId, imageId),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    productId,
+    imageId
+  }: {
+    productId: string;
+    imageId: string;
+  } & CatalogRevalidate) => setPrimaryProductImage(productId, imageId),
+  onSettled: invalidateFromVariables
 });
 
 export const addProductColorMutation = mutationOptions({
-  mutationFn: (payload: ProductColorMutationPayload) => addProductColor(payload),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    productSlug: _productSlug,
+    categorySlug: _categorySlug,
+    ...payload
+  }: ProductColorMutationPayload & CatalogRevalidate) => addProductColor(payload),
+  onSettled: invalidateFromVariables
 });
 
 export const addProductOptionMutation = mutationOptions({
-  mutationFn: (payload: ProductOptionMutationPayload) => addProductOption(payload),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    productSlug: _productSlug,
+    categorySlug: _categorySlug,
+    ...payload
+  }: ProductOptionMutationPayload & CatalogRevalidate) => addProductOption(payload),
+  onSettled: invalidateFromVariables
 });
 
 export const addProductOptionValueMutation = mutationOptions({
-  mutationFn: (payload: ProductOptionValueMutationPayload) => addProductOptionValue(payload),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    productSlug: _productSlug,
+    categorySlug: _categorySlug,
+    ...payload
+  }: ProductOptionValueMutationPayload & CatalogRevalidate) => addProductOptionValue(payload),
+  onSettled: invalidateFromVariables
 });
 
 export const updateProductOptionValueMutation = mutationOptions({
-  mutationFn: (payload: {
+  mutationFn: ({
+    productSlug: _productSlug,
+    categorySlug: _categorySlug,
+    ...payload
+  }: {
     value_id: string;
     name?: string;
     hex?: string | null;
     position?: number;
-  }) => updateProductOptionValue(payload),
-  onSettled: () => invalidateCatalog()
+  } & CatalogRevalidate) => updateProductOptionValue(payload),
+  onSettled: invalidateFromVariables
 });
 
 export const removeProductOptionValueMutation = mutationOptions({
-  mutationFn: ({ id, confirm }: { id: string; confirm?: boolean }) =>
-    removeProductOptionValue(id, confirm),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    id,
+    confirm
+  }: {
+    id: string;
+    confirm?: boolean;
+  } & CatalogRevalidate) => removeProductOptionValue(id, confirm),
+  onSettled: invalidateFromVariables
 });
 
 export const deleteProductOptionMutation = mutationOptions({
-  mutationFn: ({ id, confirm }: { id: string; confirm?: boolean }) =>
-    deleteProductOption(id, confirm),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    id,
+    confirm
+  }: {
+    id: string;
+    confirm?: boolean;
+  } & CatalogRevalidate) => deleteProductOption(id, confirm),
+  onSettled: invalidateFromVariables
 });
 
 export const generateProductVariantsMutation = mutationOptions({
-  mutationFn: (productId: string) => generateProductVariants(productId),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({ productId }: { productId: string } & CatalogRevalidate) =>
+    generateProductVariants(productId),
+  onSettled: invalidateFromVariables
 });
 
 export const upsertProductVariantMutation = mutationOptions({
-  mutationFn: (payload: ProductVariantMutationPayload) => upsertProductVariant(payload),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    productSlug: _productSlug,
+    categorySlug: _categorySlug,
+    ...payload
+  }: ProductVariantMutationPayload & CatalogRevalidate) => upsertProductVariant(payload),
+  onSettled: invalidateFromVariables
 });
 
 export const deleteProductVariantMutation = mutationOptions({
-  mutationFn: (id: string) => deleteProductVariant(id),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({ id }: { id: string } & CatalogRevalidate) => deleteProductVariant(id),
+  onSettled: invalidateFromVariables
 });
 
 export const setVariantInventoryMutation = mutationOptions({
-  mutationFn: ({ variantId, onHand }: { variantId: string; onHand: number }) =>
-    setVariantInventory(variantId, onHand),
-  onSettled: () => invalidateCatalog()
+  mutationFn: ({
+    variantId,
+    onHand
+  }: {
+    variantId: string;
+    onHand: number;
+  } & CatalogRevalidate) => setVariantInventory(variantId, onHand),
+  onSettled: invalidateFromVariables
 });
 
 export const setOptionValueMediaMutation = mutationOptions({
@@ -146,6 +211,6 @@ export const setOptionValueMediaMutation = mutationOptions({
   }: {
     optionValueId: string;
     mediaAssetIds: string[];
-  }) => setOptionValueMedia(optionValueId, mediaAssetIds),
-  onSettled: () => invalidateCatalog()
+  } & CatalogRevalidate) => setOptionValueMedia(optionValueId, mediaAssetIds),
+  onSettled: invalidateFromVariables
 });

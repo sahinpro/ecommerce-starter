@@ -38,6 +38,7 @@ import {
   addProductImageMutation,
   addProductOptionMutation,
   addProductOptionValueMutation,
+  catalogRevalidate,
   deleteProductImageMutation,
   deleteProductOptionMutation,
   removeProductOptionValueMutation,
@@ -76,10 +77,8 @@ function ProductImagesSection({ product }: { product: Product }) {
 
   const deleteMutation = useMutation({
     ...deleteProductImageMutation,
-    onMutate: (imageId) => {
-      const snapshot = patchCachedProduct(product, (current) =>
-        productWithoutImage(current, imageId)
-      );
+    onMutate: ({ id }) => {
+      const snapshot = patchCachedProduct(product, (current) => productWithoutImage(current, id));
       return { snapshot };
     },
     onSuccess: () => toast.success('Image detached (kept in media library)'),
@@ -144,7 +143,11 @@ function ProductImagesSection({ product }: { product: Product }) {
                       className='h-auto cursor-pointer px-0 text-xs'
                       disabled={primaryMutation.isPending}
                       onClick={() =>
-                        primaryMutation.mutate({ productId: product.id, imageId: image.id })
+                        primaryMutation.mutate({
+                          productId: product.id,
+                          imageId: image.id,
+                          ...catalogRevalidate(product)
+                        })
                       }
                     >
                       Set as primary
@@ -157,7 +160,9 @@ function ProductImagesSection({ product }: { product: Product }) {
                   size='icon'
                   className='size-8 cursor-pointer'
                   disabled={deleteMutation.isPending}
-                  onClick={() => deleteMutation.mutate(image.id)}
+                  onClick={() =>
+                    deleteMutation.mutate({ id: image.id, ...catalogRevalidate(product) })
+                  }
                   aria-label='Detach image'
                 >
                   <Icons.trash className='size-4' />
@@ -189,7 +194,8 @@ function ProductImagesSection({ product }: { product: Product }) {
                     public_id: asset.public_id,
                     alt: asset.alt || product.name,
                     sort_order: sortOrder,
-                    media_asset_id: asset.id
+                    media_asset_id: asset.id,
+                    ...catalogRevalidate(product)
                   });
                   sortOrder += 1;
                   added += 1;
@@ -289,7 +295,7 @@ function ProductOptionsSection({ product }: { product: Product }) {
     try {
       const usage = await previewOptionValueUsage(id);
       if (usage.count === 0) {
-        removeValueMutation.mutate({ id, confirm: false });
+        removeValueMutation.mutate({ id, confirm: false, ...catalogRevalidate(product) });
         return;
       }
       setPendingDelete({ kind: 'value', id, label, count: usage.count });
@@ -411,7 +417,8 @@ function ProductOptionsSection({ product }: { product: Product }) {
                         addValueMutation.mutate({
                           option_id: option.id,
                           name: draft.name.trim(),
-                          hex: isColor ? draft.hex : null
+                          hex: isColor ? draft.hex : null,
+                          ...catalogRevalidate(product)
                         })
                       }
                     >
@@ -446,7 +453,13 @@ function ProductOptionsSection({ product }: { product: Product }) {
                 variant='outline'
                 className='cursor-pointer'
                 disabled={addOptionMutation.isPending}
-                onClick={() => addOptionMutation.mutate({ product_id: product.id, name: preset })}
+                onClick={() =>
+                  addOptionMutation.mutate({
+                    product_id: product.id,
+                    name: preset,
+                    ...catalogRevalidate(product)
+                  })
+                }
               >
                 {preset}
               </Button>
@@ -456,7 +469,11 @@ function ProductOptionsSection({ product }: { product: Product }) {
               disabled={!optionName.trim() || addOptionMutation.isPending}
               isLoading={addOptionMutation.isPending}
               onClick={() =>
-                addOptionMutation.mutate({ product_id: product.id, name: optionName.trim() })
+                addOptionMutation.mutate({
+                  product_id: product.id,
+                  name: optionName.trim(),
+                  ...catalogRevalidate(product)
+                })
               }
             >
               Add option
@@ -484,10 +501,18 @@ function ProductOptionsSection({ product }: { product: Product }) {
           onConfirm={() => {
             if (!pendingDelete) return;
             if (pendingDelete.kind === 'value') {
-              removeValueMutation.mutate({ id: pendingDelete.id, confirm: true });
+              removeValueMutation.mutate({
+                id: pendingDelete.id,
+                confirm: true,
+                ...catalogRevalidate(product)
+              });
               return;
             }
-            deleteOptionMutation.mutate({ id: pendingDelete.id, confirm: true });
+            deleteOptionMutation.mutate({
+              id: pendingDelete.id,
+              confirm: true,
+              ...catalogRevalidate(product)
+            });
           }}
         />
       </CardContent>
@@ -559,7 +584,8 @@ function ColorValueRow({
           public_id: asset.public_id,
           alt: asset.alt || `${product.name} ${value.name}`,
           sort_order: sortOrder,
-          media_asset_id: asset.id
+          media_asset_id: asset.id,
+          ...catalogRevalidate(product)
         });
         sortOrder += 1;
       } catch (error) {
@@ -581,7 +607,8 @@ function ColorValueRow({
             onChange={(nextHex) =>
               hexMutation.mutate({
                 value_id: value.id,
-                hex: nextHex
+                hex: nextHex,
+                ...catalogRevalidate(product)
               })
             }
           />
@@ -621,7 +648,8 @@ function ColorValueRow({
                 onClick={() =>
                   mediaMutation.mutate({
                     optionValueId: value.id,
-                    mediaAssetIds: value.media_asset_ids.filter((id) => id !== assetId)
+                    mediaAssetIds: value.media_asset_ids.filter((id) => id !== assetId),
+                    ...catalogRevalidate(product)
                   })
                 }
               >
@@ -662,7 +690,8 @@ function ColorValueRow({
               }
               await mediaMutation.mutateAsync({
                 optionValueId: value.id,
-                mediaAssetIds: nextIds
+                mediaAssetIds: nextIds,
+                ...catalogRevalidate(product)
               });
             } catch {
               // toasts from mutation onError

@@ -19,6 +19,7 @@ import {
 
 import {
   archiveProductMutation,
+  catalogRevalidate,
   deleteProductMutation,
   restoreProductMutation
 } from '../../api/mutations';
@@ -92,8 +93,10 @@ export function CellAction({ data }: CellActionProps) {
         isOpen={confirm !== null}
         onClose={() => setConfirm(null)}
         onConfirm={() => {
-          if (confirm === 'archive') archiveMutation.mutate(data.id);
-          if (confirm === 'delete') deleteMutation.mutate(data.id);
+          if (confirm === 'archive')
+            archiveMutation.mutate({ id: data.id, ...catalogRevalidate(data) });
+          if (confirm === 'delete')
+            deleteMutation.mutate({ id: data.id, ...catalogRevalidate(data) });
         }}
         loading={pending}
         title={copy?.title}
@@ -116,7 +119,7 @@ export function CellAction({ data }: CellActionProps) {
             <>
               <DropdownMenuItem
                 disabled={restoreMutation.isPending}
-                onClick={() => restoreMutation.mutate(data.id)}
+                onClick={() => restoreMutation.mutate({ id: data.id, ...catalogRevalidate(data) })}
               >
                 <Icons.restore className='mr-2 h-4 w-4' /> Restore
               </DropdownMenuItem>

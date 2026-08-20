@@ -18,6 +18,7 @@ import { useDataTable } from '@/hooks/use-data-table';
 import { getSortingStateParser } from '@/lib/parsers';
 import { cn } from '@/lib/utils';
 
+import { revalidateCatalogAction } from '@/features/catalog/actions';
 import { catalogKeys } from '@/features/catalog/queries';
 import { getQueryClient } from '@/lib/query-client';
 
@@ -93,8 +94,11 @@ export function ProductTable() {
   });
 
   const archiveMutation = useMutation({
-    mutationFn: async (ids: string[]) => {
-      await Promise.all(ids.map((id) => archiveProduct(id)));
+    mutationFn: async (products: { id: string; slug: string; category_slug: string | null }[]) => {
+      await Promise.all(products.map((item) => archiveProduct(item.id)));
+      await Promise.all(
+        products.map((item) => revalidateCatalogAction(item.slug, item.category_slug))
+      );
     },
     onSuccess: () => {
       void getQueryClient().invalidateQueries({ queryKey: catalogKeys.all });
@@ -108,8 +112,11 @@ export function ProductTable() {
   });
 
   const restoreMutation = useMutation({
-    mutationFn: async (ids: string[]) => {
-      await Promise.all(ids.map((id) => restoreProduct(id)));
+    mutationFn: async (products: { id: string; slug: string; category_slug: string | null }[]) => {
+      await Promise.all(products.map((item) => restoreProduct(item.id)));
+      await Promise.all(
+        products.map((item) => revalidateCatalogAction(item.slug, item.category_slug))
+      );
     },
     onSuccess: () => {
       void getQueryClient().invalidateQueries({ queryKey: catalogKeys.all });
@@ -140,7 +147,7 @@ export function ProductTable() {
     );
   }
 
-  const selectedIds = table.getFilteredSelectedRowModel().rows.map((row) => row.original.id);
+  const selectedProducts = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
   const onArchivedTab = params.status === 'archived';
 
   return (
@@ -148,7 +155,7 @@ export function ProductTable() {
       <AlertModal
         isOpen={archiveOpen}
         onClose={() => setArchiveOpen(false)}
-        onConfirm={() => archiveMutation.mutate(selectedIds)}
+        onConfirm={() => archiveMutation.mutate(selectedProducts)}
         loading={archiveMutation.isPending}
         title='Archive selected products?'
         description='Archived products are hidden from the storefront. You can restore them anytime.'
@@ -170,7 +177,7 @@ export function ProductTable() {
                 variant='outline'
                 size='sm'
                 isLoading={restoreMutation.isPending}
-                onClick={() => restoreMutation.mutate(selectedIds)}
+                onClick={() => restoreMutation.mutate(selectedProducts)}
               >
                 <Icons.restore />
                 Restore
