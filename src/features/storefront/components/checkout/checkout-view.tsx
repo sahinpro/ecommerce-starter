@@ -72,7 +72,7 @@ export function CheckoutView() {
 
       if (!result.ok) {
         setError(result.error);
-        const isStock = /only \d+ items are available|out of stock|insufficient/i.test(
+        const isStock = /sold out|only \d+ items are available|out of stock|insufficient/i.test(
           result.error
         );
         if (isStock) {

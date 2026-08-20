@@ -1,5 +1,9 @@
 'use server';
 
+import { headers } from 'next/headers';
+
+import { allowCheckout, CHECKOUT_RATE_LIMIT_MESSAGE } from '@/lib/rate-limit';
+
 import { placeCodOrderSchema } from './schemas/checkout';
 import { storeSettingsSchema } from './schemas/settings';
 import { isOrderStatus, type OrderStatus } from './constants';
@@ -11,6 +15,11 @@ export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string
 export async function placeCodOrderAction(
   raw: unknown
 ): Promise<ActionResult<PlaceCodOrderResult>> {
+  const ip = (await headers()).get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!allowCheckout(ip)) {
+    return { ok: false, error: CHECKOUT_RATE_LIMIT_MESSAGE };
+  }
+
   const parsed = placeCodOrderSchema.safeParse(raw);
   if (!parsed.success) {
     const first = parsed.error.issues[0]?.message ?? 'Invalid checkout data';

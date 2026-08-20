@@ -136,16 +136,11 @@ export async function placeCodOrder(input: PlaceCodOrderInput): Promise<PlaceCod
 
   if (error) {
     const message = error.message || 'Could not place order';
-    if (message.includes('Sorry, only')) {
-      throw new Error(message);
-    }
-    if (message.includes('INSUFFICIENT_STOCK')) {
-      const available = message.split(':')[1];
-      throw new Error(
-        available
-          ? `Sorry, only ${available} items are available.`
-          : 'Sorry, this item is out of stock.'
-      );
+    if (
+      /insufficient stock|INSUFFICIENT_STOCK|sold out/i.test(message) ||
+      message.includes('Sorry, only')
+    ) {
+      throw new Error('This item just sold out — please remove it and try again');
     }
     throw new Error(message);
   }

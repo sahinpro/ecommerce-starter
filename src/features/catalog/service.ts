@@ -68,8 +68,8 @@ function mapRpcMessage(message: string): string {
     const count = message.split(':')[1] ?? 'some';
     return `${count} variants use this value. Confirm to remove or archive them.`;
   }
-  if (message.includes('INSUFFICIENT_STOCK')) {
-    return message;
+  if (message.includes('INSUFFICIENT_STOCK') || /insufficient stock for variant/i.test(message)) {
+    return 'This item just sold out — please remove it and try again';
   }
   if (
     message.includes('products_sku_uidx') ||
@@ -80,7 +80,10 @@ function mapRpcMessage(message: string): string {
   if (message.includes('Set a product SKU')) {
     return 'Set a product SKU before creating variants.';
   }
-  if (message.includes('product_variants_active_combination')) {
+  if (
+    message.includes('product_variants_active_combination') ||
+    message.includes('product_variants_unique_combo')
+  ) {
     return 'That option combination already exists.';
   }
   if (message.includes('product_options_product_id_name')) {
