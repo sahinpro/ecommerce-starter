@@ -3,9 +3,8 @@ import 'server-only';
 import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import { BUNDLED_MEDIA_ID_PREFIX } from './local-media';
 import type { MediaAsset } from './types';
-
-export const BUNDLED_MEDIA_ID_PREFIX = 'bundled:';
 
 const BUNDLED_FOLDERS = ['home', 'products', 'swatches'] as const;
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
@@ -54,10 +53,6 @@ async function walkImages(
       locked: true
     });
   }
-}
-
-export function isBundledMediaId(id: string): boolean {
-  return id.startsWith(BUNDLED_MEDIA_ID_PREFIX);
 }
 
 export async function listBundledStorefrontAssets(search?: string): Promise<MediaAsset[]> {

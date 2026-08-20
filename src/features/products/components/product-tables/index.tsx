@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { parseAsInteger, parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { SortingState } from '@tanstack/react-table';
 import { toast } from 'sonner';
 
 import { Icons } from '@/components/icons';
+import { AlertModal } from '@/components/modal/alert-modal';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/table/data-table';
 import { DataTableBulkBar } from '@/components/ui/table/data-table-bulk-bar';
@@ -20,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { catalogKeys } from '@/features/catalog/queries';
 import { getQueryClient } from '@/lib/query-client';
 
-import { archiveProduct } from '../../api/service';
+import { archiveProduct, restoreProduct } from '../../api/service';
 import { categoriesQueryOptions, productsQueryOptions } from '../../api/queries';
 import type { ProductFilters, ProductStatus } from '../../api/types';
 import { getProductColumns } from './columns';
@@ -42,6 +43,7 @@ function mapTableSort(sort: SortingState): ProductFilters['sort'] {
 
 export function ProductTable() {
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   const categoryOptions = useMemo(
     () => categories.map((category) => ({ label: category.name, value: category.slug })),
@@ -98,9 +100,24 @@ export function ProductTable() {
       void getQueryClient().invalidateQueries({ queryKey: catalogKeys.all });
       toast.success('Selected products archived');
       table.resetRowSelection();
+      setArchiveOpen(false);
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to archive products');
+    }
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => restoreProduct(id)));
+    },
+    onSuccess: () => {
+      void getQueryClient().invalidateQueries({ queryKey: catalogKeys.all });
+      toast.success('Selected products restored as drafts');
+      table.resetRowSelection();
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to restore products');
     }
   });
 
@@ -124,9 +141,19 @@ export function ProductTable() {
   }
 
   const selectedIds = table.getFilteredSelectedRowModel().rows.map((row) => row.original.id);
+  const onArchivedTab = params.status === 'archived';
 
   return (
     <div className='flex flex-1 flex-col gap-3'>
+      <AlertModal
+        isOpen={archiveOpen}
+        onClose={() => setArchiveOpen(false)}
+        onConfirm={() => archiveMutation.mutate(selectedIds)}
+        loading={archiveMutation.isPending}
+        title='Archive selected products?'
+        description='Archived products are hidden from the storefront. You can restore them anytime.'
+        confirmLabel='Archive'
+      />
       <DataTableStatusTabs
         value={params.status}
         options={STATUS_TABS}
@@ -138,17 +165,22 @@ export function ProductTable() {
         table={table}
         actionBar={
           <DataTableBulkBar table={table}>
-            <Button
-              variant='outline'
-              size='sm'
-              isLoading={archiveMutation.isPending}
-              onClick={() => {
-                archiveMutation.mutate(selectedIds);
-              }}
-            >
-              <Icons.archive />
-              Archive
-            </Button>
+            {onArchivedTab ? (
+              <Button
+                variant='outline'
+                size='sm'
+                isLoading={restoreMutation.isPending}
+                onClick={() => restoreMutation.mutate(selectedIds)}
+              >
+                <Icons.restore />
+                Restore
+              </Button>
+            ) : (
+              <Button variant='outline' size='sm' onClick={() => setArchiveOpen(true)}>
+                <Icons.archive />
+                Archive
+              </Button>
+            )}
           </DataTableBulkBar>
         }
       >

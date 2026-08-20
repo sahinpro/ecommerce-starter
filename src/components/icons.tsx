@@ -3,6 +3,7 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
   IconArchive,
+  IconArchiveOff,
   IconArrowRight,
   IconBell,
   IconBold,
@@ -109,6 +110,7 @@ export const Icons = {
   settings: IconSettings,
   trash: IconTrash,
   archive: IconArchive,
+  restore: IconArchiveOff,
 
   // Navigation / Chevrons
   chevronDown: IconChevronDown,

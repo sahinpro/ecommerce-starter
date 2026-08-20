@@ -3,7 +3,10 @@
 import type { MediaFolderKey } from '@/lib/cloudinary/folders';
 import { resolveMediaFolder } from '@/lib/cloudinary/folders';
 
+import { isPostgresUuid } from '@/lib/postgres-uuid';
+
 import { hashFileSha256 } from './hash';
+import { isBundledMediaId } from './local-media';
 import type { MediaAsset, MediaListFilters } from './types';
 import { uploadImageToCloudinary } from './upload-client';
 
@@ -53,6 +56,23 @@ export async function registerMediaAsset(input: {
     throw new Error(payload.error || 'Failed to register media.');
   }
   return payload.asset;
+}
+
+/** Library rows for local /public/sukoon files use a synthetic id until first assign. */
+export async function ensureAssignableMediaAsset(asset: MediaAsset): Promise<MediaAsset> {
+  if (isPostgresUuid(asset.id) && !isBundledMediaId(asset.id)) {
+    return asset;
+  }
+  return registerMediaAsset({
+    url: asset.url,
+    public_id: asset.public_id,
+    folder: asset.folder,
+    content_hash: asset.content_hash,
+    bytes: asset.bytes,
+    width: asset.width,
+    height: asset.height,
+    alt: asset.alt
+  });
 }
 
 export async function deleteMediaAssetClient(id: string): Promise<void> {

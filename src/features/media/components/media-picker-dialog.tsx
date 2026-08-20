@@ -17,7 +17,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-import { uploadOrReuseMedia } from '../api/client';
+import { ensureAssignableMediaAsset, uploadOrReuseMedia } from '../api/client';
+import { isLocalStorefrontMedia } from '../api/local-media';
 import { mediaAssetsQueryOptions, mediaKeys } from '../api/queries';
 import type { MediaAsset } from '../api/types';
 import { getQueryClient } from '@/lib/query-client';
@@ -30,6 +31,17 @@ type MediaPickerDialogProps = {
   multiple?: boolean;
 };
 
+function assetFileName(asset: MediaAsset): string {
+  return asset.public_id.split('/').pop() || asset.alt || 'image';
+}
+
+function folderLabel(folder: string): string {
+  if (folder.endsWith('/home')) return 'Home';
+  if (folder.endsWith('/products')) return 'Products';
+  if (folder.endsWith('/swatches')) return 'Swatches';
+  return folder;
+}
+
 export function MediaPickerDialog({
   open,
   onOpenChange,
@@ -39,12 +51,12 @@ export function MediaPickerDialog({
 }: MediaPickerDialogProps) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirming, setConfirming] = useState(false);
 
-  const { data: allAssets = [], isLoading } = useQuery({
+  const { data: assets = [], isLoading } = useQuery({
     ...mediaAssetsQueryOptions({ search }),
     enabled: open
   });
-  const assets = useMemo(() => allAssets.filter((asset) => !asset.locked), [allAssets]);
 
   const excluded = useMemo(() => new Set(excludePublicIds), [excludePublicIds]);
 
@@ -75,15 +87,26 @@ export function MediaPickerDialog({
     });
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     const picked = assets.filter((asset) => selected.has(asset.id));
     if (!picked.length) {
       toast.error('Select at least one image');
       return;
     }
-    onSelect(picked);
-    setSelected(new Set());
-    onOpenChange(false);
+    setConfirming(true);
+    try {
+      const assignable = await Promise.all(
+        picked.map((asset) => ensureAssignableMediaAsset(asset))
+      );
+      onSelect(assignable);
+      setSelected(new Set());
+      onOpenChange(false);
+      void getQueryClient().invalidateQueries({ queryKey: mediaKeys.all });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not attach image');
+    } finally {
+      setConfirming(false);
+    }
   }
 
   return (
@@ -130,7 +153,7 @@ export function MediaPickerDialog({
           </label>
         </div>
 
-        <div className='min-h-0 flex-1 overflow-y-auto rounded-md border p-3'>
+        <div className='max-h-[min(28rem,50vh)] min-h-40 overflow-y-auto rounded-md border p-3'>
           {isLoading ? (
             <p className='text-muted-foreground text-sm'>Loading media…</p>
           ) : assets.length === 0 ? (
@@ -140,30 +163,45 @@ export function MediaPickerDialog({
               {assets.map((asset) => {
                 const alreadyOnProduct = excluded.has(asset.public_id);
                 const isSelected = selected.has(asset.id);
+                const local = isLocalStorefrontMedia(asset);
                 return (
                   <li key={asset.id}>
                     <button
                       type='button'
-                      disabled={alreadyOnProduct}
+                      disabled={alreadyOnProduct || confirming}
                       onClick={() => toggle(asset.id)}
                       className={cn(
-                        'relative aspect-square w-full cursor-pointer overflow-hidden rounded-md border transition',
-                        isSelected && 'ring-primary ring-2',
+                        'w-full cursor-pointer text-left',
                         alreadyOnProduct && 'cursor-not-allowed opacity-40'
                       )}
                     >
-                      <Image
-                        src={asset.url}
-                        alt={asset.alt || asset.public_id}
-                        fill
-                        className='object-cover'
-                        sizes='160px'
-                      />
-                      {alreadyOnProduct ? (
-                        <span className='bg-background/80 absolute inset-x-0 bottom-0 px-1 py-0.5 text-[10px]'>
-                          On product
-                        </span>
-                      ) : null}
+                      <span
+                        className={cn(
+                          'relative block aspect-square w-full overflow-hidden rounded-md border transition',
+                          isSelected && 'ring-primary ring-2'
+                        )}
+                      >
+                        <Image
+                          src={asset.url}
+                          alt={asset.alt || asset.public_id}
+                          fill
+                          className='object-cover'
+                          sizes='160px'
+                        />
+                        {alreadyOnProduct ? (
+                          <span className='bg-background/80 absolute inset-x-0 bottom-0 px-1 py-0.5 text-[10px]'>
+                            On product
+                          </span>
+                        ) : null}
+                        {local ? (
+                          <span className='bg-background/90 absolute top-1 right-1 rounded-sm border px-1 py-0.5 text-[9px] tracking-wide uppercase'>
+                            {folderLabel(asset.folder)}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className='mt-1 block truncate text-[11px]' title={asset.public_id}>
+                        {assetFileName(asset)}
+                      </span>
                     </button>
                   </li>
                 );
@@ -176,7 +214,12 @@ export function MediaPickerDialog({
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type='button' onClick={handleConfirm} disabled={selected.size === 0}>
+          <Button
+            type='button'
+            onClick={() => void handleConfirm()}
+            disabled={selected.size === 0 || confirming}
+            isLoading={confirming}
+          >
             Add {selected.size > 0 ? `(${selected.size})` : ''}
           </Button>
         </DialogFooter>

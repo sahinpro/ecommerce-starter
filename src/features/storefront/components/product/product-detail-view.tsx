@@ -98,13 +98,13 @@ function ProductGallery({ images, productName }: { images: ProductImage[]; produ
 }
 
 export function ProductDetailView({ product, related }: ProductDetailViewProps) {
-  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
+  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(undefined);
   const galleryImages = imagesForColor(product, selectedColor?.id);
 
   useEffect(() => {
     setSelectedColor((current) => {
-      const stillThere = product.colors.find((color) => color.id === current?.id);
-      return stillThere ?? product.colors[0];
+      if (!current) return undefined;
+      return product.colors.find((color) => color.id === current.id);
     });
   }, [product.colors]);
 

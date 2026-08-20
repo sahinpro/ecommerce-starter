@@ -5,7 +5,8 @@ import { deleteCloudinaryAsset } from '@/lib/cloudinary';
 import { getAdminUser } from '@/lib/auth/session';
 
 import type { MediaAsset, MediaAssetCreateInput, MediaListFilters } from './types';
-import { isBundledMediaId, listBundledStorefrontAssets } from './bundled-assets';
+import { listBundledStorefrontAssets } from './bundled-assets';
+import { isBundledMediaId, isLocalStorefrontMedia } from './local-media';
 
 async function assertAdmin(): Promise<void> {
   const admin = await getAdminUser();
@@ -15,7 +16,7 @@ async function assertAdmin(): Promise<void> {
 }
 
 function mapAsset(row: Record<string, unknown>, usageCount?: number): MediaAsset {
-  return {
+  const asset: MediaAsset = {
     id: String(row.id),
     url: String(row.url),
     public_id: String(row.public_id),
@@ -29,6 +30,7 @@ function mapAsset(row: Record<string, unknown>, usageCount?: number): MediaAsset
     updated_at: String(row.updated_at),
     usage_count: usageCount
   };
+  return { ...asset, locked: isLocalStorefrontMedia(asset) };
 }
 
 export async function findMediaByContentHash(contentHash: string): Promise<MediaAsset | null> {
@@ -133,10 +135,20 @@ export async function listMediaAssets(filters: MediaListFilters = {}): Promise<M
 
   const uploaded = assets.map((asset) => ({
     ...asset,
-    usage_count: counts.get(asset.id) ?? 0
+    usage_count: counts.get(asset.id) ?? 0,
+    locked: isLocalStorefrontMedia(asset)
   }));
 
-  return [...bundledFiltered, ...uploaded];
+  const uploadedByPublicId = new Map(uploaded.map((asset) => [asset.public_id, asset]));
+  const local = bundledFiltered.map((asset) => {
+    const registered = uploadedByPublicId.get(asset.public_id);
+    return registered ? { ...registered, locked: true } : asset;
+  });
+  const remote = uploaded.filter(
+    (asset) => !bundledFiltered.some((bundled) => bundled.public_id === asset.public_id)
+  );
+
+  return [...local, ...remote];
 }
 
 export async function getMediaUsageCount(mediaAssetId: string): Promise<number> {
@@ -166,6 +178,9 @@ export async function deleteMediaAsset(id: string): Promise<void> {
 
   if (loadError) throw new Error(loadError.message || 'Failed to load media asset');
   if (!asset) throw new Error('Media asset not found');
+  if (isLocalStorefrontMedia(mapAsset(asset as Record<string, unknown>))) {
+    throw new Error('Storefront images cannot be removed from the media library.');
+  }
 
   const usage = await getMediaUsageCount(id);
   if (usage > 0) {

@@ -39,6 +39,7 @@ export function ColorSwatches({
               type='button'
               onClick={() => onSelect(color)}
               aria-label={color.name}
+              aria-pressed={isSelected}
               className={swatchClass}
               style={{ backgroundColor: color.hex }}
             />

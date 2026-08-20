@@ -21,7 +21,7 @@ type ProductPurchasePanelProps = {
   product: Product;
   className?: string;
   selectedColor?: ProductColor;
-  onSelectedColorChange?: (color: ProductColor) => void;
+  onSelectedColorChange?: (color: ProductColor | undefined) => void;
 };
 
 function DetailTabs({ product }: { product: Product }) {
@@ -84,14 +84,21 @@ export function ProductPurchasePanel({
   const wishlisted = wishlistHydrated && isWishlisted;
   const colorControlled = onSelectedColorChange != null;
 
-  const [internalColor, setInternalColor] = useState<ProductColor | undefined>(
-    selectedColorProp ?? product.colors[0]
-  );
+  const [internalColor, setInternalColor] = useState<ProductColor | undefined>(selectedColorProp);
   const [selectedSize, setSelectedSize] = useState<string | undefined>(() => {
-    const initialColor = selectedColorProp ?? product.colors[0];
     const firstInStock = product.sizes.find((size) => {
-      const variant = findVariant(product, size, initialColor?.id);
-      return Boolean(variant && variant.stock_quantity >= 1);
+      if (selectedColorProp) {
+        const variant = findVariant(product, size, selectedColorProp.id);
+        return Boolean(variant && variant.stock_quantity >= 1);
+      }
+      if (product.colors.length === 0) {
+        const variant = findVariant(product, size);
+        return Boolean(variant && variant.stock_quantity >= 1);
+      }
+      return product.colors.some((color) => {
+        const variant = findVariant(product, size, color.id);
+        return Boolean(variant && variant.stock_quantity >= 1);
+      });
     });
     return firstInStock ?? product.sizes[0];
   });
@@ -100,8 +107,8 @@ export function ProductPurchasePanel({
   useEffect(() => {
     if (colorControlled) return;
     setInternalColor((current) => {
-      const stillThere = product.colors.find((color) => color.id === current?.id);
-      return stillThere ?? product.colors[0];
+      if (!current) return undefined;
+      return product.colors.find((color) => color.id === current.id);
     });
   }, [colorControlled, product.colors]);
 
@@ -112,23 +119,37 @@ export function ProductPurchasePanel({
   }, [product.sizes]);
 
   function selectColor(color: ProductColor) {
+    const next = selectedColor?.id === color.id ? undefined : color;
     if (colorControlled) {
-      onSelectedColorChange?.(color);
+      onSelectedColorChange?.(next);
       return;
     }
-    setInternalColor(color);
+    setInternalColor(next);
   }
 
   const selectedVariant =
     selectedSize != null ? findVariant(product, selectedSize, selectedColor?.id) : undefined;
   const displayPrice = selectedVariant?.price ?? product.price;
   const displayCompare = selectedVariant?.compare_at_price ?? product.compare_at_price;
+  const colorRequired = product.colors.length > 0;
   const isSelectedOutOfStock =
-    selectedSize != null && (!selectedVariant || selectedVariant.stock_quantity < 1);
+    selectedSize != null &&
+    (!colorRequired || selectedColor != null) &&
+    (!selectedVariant || selectedVariant.stock_quantity < 1);
 
   function isSizeInStock(size: string): boolean {
-    const variant = findVariant(product, size, selectedColor?.id);
-    return Boolean(variant && variant.stock_quantity >= 1);
+    if (selectedColor) {
+      const variant = findVariant(product, size, selectedColor.id);
+      return Boolean(variant && variant.stock_quantity >= 1);
+    }
+    if (!colorRequired) {
+      const variant = findVariant(product, size);
+      return Boolean(variant && variant.stock_quantity >= 1);
+    }
+    return product.colors.some((color) => {
+      const variant = findVariant(product, size, color.id);
+      return Boolean(variant && variant.stock_quantity >= 1);
+    });
   }
 
   function handleAddToCart() {

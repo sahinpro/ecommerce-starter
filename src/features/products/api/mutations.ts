@@ -11,11 +11,13 @@ import {
   addProductOptionValue,
   archiveProduct,
   createProduct,
+  deleteProduct,
   deleteProductImage,
   deleteProductOption,
   deleteProductVariant,
   generateProductVariants,
   removeProductOptionValue,
+  restoreProduct,
   setPrimaryProductImage,
   setVariantInventory,
   setOptionValueMedia,
@@ -50,6 +52,16 @@ export const updateProductMutation = mutationOptions({
 
 export const archiveProductMutation = mutationOptions({
   mutationFn: (id: string) => archiveProduct(id),
+  onSettled: () => invalidateCatalog()
+});
+
+export const restoreProductMutation = mutationOptions({
+  mutationFn: (id: string) => restoreProduct(id),
+  onSettled: () => invalidateCatalog()
+});
+
+export const deleteProductMutation = mutationOptions({
+  mutationFn: (id: string) => deleteProduct(id),
   onSettled: () => invalidateCatalog()
 });
 

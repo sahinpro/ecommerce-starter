@@ -363,8 +363,16 @@ export async function getProductByIdOrSlug(idOrSlug: string): Promise<Product | 
   const key = idOrSlug.trim();
   if (!key) return null;
 
-  const bySlug = await getProductBySlug(key);
-  if (bySlug) return bySlug;
+  const supabase = getSupabase();
+  const select = await productDetailSelect();
+  const { data, error } = await supabase
+    .from('products')
+    .select(select)
+    .eq('slug', key)
+    .maybeSingle();
+
+  if (error) throw catalogError('Failed to load product', error);
+  if (data) return toCatalogProduct(data as Parameters<typeof toCatalogProduct>[0]);
 
   return getProductById(key);
 }
@@ -534,10 +542,15 @@ export async function updateProduct(
       throw new Error('Add at least one variant before publishing this product.');
     }
   }
+  const row: Record<string, unknown> = { ...payload };
+  if (payload.status && payload.status !== 'archived') {
+    row.deleted_at = null;
+  }
+
   const supabase = getSupabase();
   let result = await supabase
     .from('products')
-    .update(payload)
+    .update(row)
     .eq('id', id)
     .select(await productDetailSelect())
     .single();
@@ -545,7 +558,7 @@ export async function updateProduct(
   if (result.error && isMissingSizeFitImageColumn(result.error.message)) {
     result = await supabase
       .from('products')
-      .update(withoutSizeFitImage(payload))
+      .update(withoutSizeFitImage(row))
       .eq('id', id)
       .select(await productDetailSelect())
       .single();
@@ -563,6 +576,26 @@ export async function archiveProduct(id: string): Promise<void> {
     .eq('id', id);
 
   if (error) throw catalogError('Failed to archive product', error);
+}
+
+export async function restoreProduct(id: string): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('products')
+    .update({ status: 'draft', deleted_at: null })
+    .eq('id', id);
+
+  if (error) throw catalogError('Failed to restore product', error);
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from('products')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw catalogError('Failed to delete product', error);
 }
 
 export async function addProductImage(input: ProductImageMutationPayload): Promise<ProductImage> {
@@ -868,10 +901,8 @@ export async function getInventoryAdjustments(variantId: string): Promise<Invent
 
 /** Admin list — includes drafts/archived when status=all */
 export async function getAdminProducts(filters: ProductFilters = {}): Promise<ProductsResponse> {
-  const status = filters.status ?? 'all';
   return getProducts({
     ...filters,
-    status,
-    includeDeleted: filters.includeDeleted ?? status === 'archived'
+    status: filters.status ?? 'all'
   });
 }

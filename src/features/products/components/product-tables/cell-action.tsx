@@ -17,35 +17,88 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
-import { archiveProductMutation } from '../../api/mutations';
+import {
+  archiveProductMutation,
+  deleteProductMutation,
+  restoreProductMutation
+} from '../../api/mutations';
 import type { Product } from '../../api/types';
 
 interface CellActionProps {
   data: Product;
 }
 
+type ConfirmKind = 'archive' | 'delete';
+
+const CONFIRM_COPY: Record<
+  ConfirmKind,
+  { title: string; description: string; confirmLabel: string }
+> = {
+  archive: {
+    title: 'Archive this product?',
+    description: 'Archived products are hidden from the storefront. You can restore them anytime.',
+    confirmLabel: 'Archive'
+  },
+  delete: {
+    title: 'Delete this product?',
+    description: 'This action cannot be undone.',
+    confirmLabel: 'Delete'
+  }
+};
+
 export function CellAction({ data }: CellActionProps) {
-  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState<ConfirmKind | null>(null);
   const router = useRouter();
+  const archived = data.status === 'archived';
 
   const archiveMutation = useMutation({
     ...archiveProductMutation,
     onSuccess: () => {
       toast.success('Product archived');
-      setOpen(false);
+      setConfirm(null);
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : 'Failed to archive product');
     }
   });
 
+  const restoreMutation = useMutation({
+    ...restoreProductMutation,
+    onSuccess: () => {
+      toast.success('Product restored as draft');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to restore product');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    ...deleteProductMutation,
+    onSuccess: () => {
+      toast.success('Product deleted');
+      setConfirm(null);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete product');
+    }
+  });
+
+  const pending = archiveMutation.isPending || deleteMutation.isPending;
+  const copy = confirm ? CONFIRM_COPY[confirm] : null;
+
   return (
     <>
       <AlertModal
-        isOpen={open}
-        onClose={() => setOpen(false)}
-        onConfirm={() => archiveMutation.mutate(data.id)}
-        loading={archiveMutation.isPending}
+        isOpen={confirm !== null}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          if (confirm === 'archive') archiveMutation.mutate(data.id);
+          if (confirm === 'delete') deleteMutation.mutate(data.id);
+        }}
+        loading={pending}
+        title={copy?.title}
+        description={copy?.description}
+        confirmLabel={copy?.confirmLabel}
       />
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger render={<Button variant='ghost' className='h-8 w-8 p-0' />}>
@@ -59,9 +112,23 @@ export function CellAction({ data }: CellActionProps) {
           <DropdownMenuItem onClick={() => router.push(`/dashboard/product/${data.slug}`)}>
             <Icons.edit className='mr-2 h-4 w-4' /> Edit
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpen(true)}>
-            <Icons.archive className='mr-2 h-4 w-4' /> Archive
-          </DropdownMenuItem>
+          {archived ? (
+            <>
+              <DropdownMenuItem
+                disabled={restoreMutation.isPending}
+                onClick={() => restoreMutation.mutate(data.id)}
+              >
+                <Icons.restore className='mr-2 h-4 w-4' /> Restore
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setConfirm('delete')}>
+                <Icons.trash className='mr-2 h-4 w-4' /> Delete
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem onClick={() => setConfirm('archive')}>
+              <Icons.archive className='mr-2 h-4 w-4' /> Archive
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

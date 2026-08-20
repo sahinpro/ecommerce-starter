@@ -5,7 +5,6 @@ import { STOREFRONT_THEME } from '@/components/themes/theme.config';
 import ThemeProvider from '@/components/themes/theme-provider';
 import { cn } from '@/lib/utils';
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
 import NextTopLoader from 'nextjs-toploader';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import '../styles/globals.css';
@@ -14,6 +13,8 @@ const META_THEME_COLORS = {
   light: '#ffffff',
   dark: '#09090b'
 };
+
+const themeColorScript = `(function(){try{var p=location.pathname;if(p.indexOf('/dashboard')!==0&&p.indexOf('/auth')!==0)return;if(localStorage.theme==='dark'||((!('theme' in localStorage)||localStorage.theme==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.querySelector('meta[name="theme-color"]')?.setAttribute('content','${META_THEME_COLORS.dark}')}}catch(_){}})();`;
 
 export const metadata: Metadata = {
   title: 'Sukoon | Premium Cloth Brand',
@@ -27,15 +28,15 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang='en' suppressHydrationWarning data-theme={STOREFRONT_THEME}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeColorScript }} />
+      </head>
       <body
         className={cn(
           'bg-background overflow-x-hidden overscroll-none font-sans antialiased',
           fontVariables
         )}
       >
-        <Script id='meta-theme-color' strategy='beforeInteractive'>
-          {`(function(){try{if(localStorage.theme==='dark'||((!('theme' in localStorage)||localStorage.theme==='system')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.querySelector('meta[name="theme-color"]')?.setAttribute('content','${META_THEME_COLORS.dark}')}}catch(_){}})();`}
-        </Script>
         <NextTopLoader color='var(--primary)' showSpinner={false} />
         <NuqsAdapter>
           <ThemeProvider
