@@ -41,7 +41,7 @@ function GalleryChrome({
         aria-label='View all images'
         className='pointer-events-auto flex size-12 shrink-0 cursor-pointer items-center justify-center'
       >
-        <Icons.galleryPlus className='size-[22px]' width={22} height={22} />
+        <Icons.galleryPlus className='size-5.5' width={22} height={22} />
       </button>
     </>
   );
