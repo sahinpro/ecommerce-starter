@@ -19,7 +19,7 @@ export default function ProductViewPage({ productId }: ProductViewPageProps) {
 }
 
 function NewProductView() {
-  return <ProductForm initialData={null} pageTitle='Create New Product' />;
+  return <ProductForm initialData={null} />;
 }
 
 function EditProductView({ productId }: { productId: string }) {
@@ -29,5 +29,5 @@ function EditProductView({ productId }: { productId: string }) {
     notFound();
   }
 
-  return <ProductForm initialData={product} pageTitle='Edit Product' />;
+  return <ProductForm initialData={product} />;
 }

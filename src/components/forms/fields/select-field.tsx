@@ -16,8 +16,14 @@ import {
   FormFieldError,
   createFormField
 } from '@/components/ui/form-context';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-type Option = { value: string; label: string };
+type Option = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+  disabledReason?: string;
+};
 
 interface SelectFieldProps {
   label: string;
@@ -59,8 +65,30 @@ export function SelectField({
           </SelectTrigger>
           <SelectContent>
             {options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                disabled={opt.disabled}
+                className={
+                  opt.disabled
+                    ? 'data-disabled:pointer-events-auto data-disabled:cursor-not-allowed'
+                    : undefined
+                }
+              >
+                {opt.disabled && opt.disabledReason ? (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={<span className='block w-full cursor-not-allowed text-left' />}
+                    >
+                      {opt.label}
+                    </TooltipTrigger>
+                    <TooltipContent side='right' className='max-w-56'>
+                      {opt.disabledReason}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  opt.label
+                )}
               </SelectItem>
             ))}
           </SelectContent>

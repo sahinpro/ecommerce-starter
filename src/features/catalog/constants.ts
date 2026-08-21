@@ -27,6 +27,9 @@ export const PRODUCT_STATUS_OPTIONS = [
   { label: 'Archived', value: 'archived' }
 ] as const;
 
+export const PUBLISH_REQUIRES_VARIANT_MESSAGE =
+  'Add at least one variant before publishing this product.';
+
 export const PRODUCT_BADGE_OPTIONS = [
   { label: 'None', value: '' },
   { label: 'New', value: 'new' },

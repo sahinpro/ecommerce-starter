@@ -79,11 +79,14 @@ function mergePreviewProduct(
   values: Omit<ProductLivePreviewProps, 'product'>
 ): Product {
   const base = product ?? EMPTY_PREVIEW_PRODUCT;
+  const variantPriced = base.variants.some((variant) => variant.status !== 'archived');
   return {
     ...base,
     name: values.name.trim() || 'Untitled product',
-    price: asMoney(values.price) ?? base.price,
-    compare_at_price: asMoney(values.compareAtPrice) ?? base.compare_at_price,
+    price: variantPriced ? base.price : (asMoney(values.price) ?? base.price),
+    compare_at_price: variantPriced
+      ? base.compare_at_price
+      : (asMoney(values.compareAtPrice) ?? base.compare_at_price),
     badge: values.badge || null,
     status: values.status || base.status,
     colors: colorsFromOptions(base),

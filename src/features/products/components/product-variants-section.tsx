@@ -151,7 +151,7 @@ export function ProductVariantsSection({ product }: { product: Product }) {
   }
 
   return (
-    <Card>
+    <Card id='product-variants' className='scroll-mt-24'>
       <CardHeader className='flex flex-row flex-wrap items-center justify-between gap-3 space-y-0'>
         <CardTitle className='text-lg'>Variants & inventory</CardTitle>
         <Button

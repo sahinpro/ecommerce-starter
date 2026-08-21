@@ -9,6 +9,7 @@ import {
   PRODUCT_DETAIL_SELECT_LEGACY,
   toCatalogProduct
 } from './adapters';
+import { PUBLISH_REQUIRES_VARIANT_MESSAGE } from './constants';
 import { getCollectionNavChildren } from './figma-taxonomy';
 import { categoryMutationSchema } from './schemas/category';
 import {
@@ -542,7 +543,7 @@ export async function updateProduct(
     const current = await getProductById(id);
     const sellable = current?.variants.filter((variant) => variant.status !== 'archived') ?? [];
     if (sellable.length === 0) {
-      throw new Error('Add at least one variant before publishing this product.');
+      throw new Error(PUBLISH_REQUIRES_VARIANT_MESSAGE);
     }
   }
   const row: Record<string, unknown> = { ...payload };

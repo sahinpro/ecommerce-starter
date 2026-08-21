@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppForm, useFormFields } from '@/components/ui/tanstack-form';
+import { PUBLISH_REQUIRES_VARIANT_MESSAGE } from '@/features/catalog/constants';
 import {
   PRODUCT_BADGE_OPTIONS,
   PRODUCT_STATUS_OPTIONS,
@@ -23,6 +24,10 @@ import type { Product, ProductMutationPayload } from '../api/types';
 import { ProductDetailImageField } from './product-detail-image-field';
 import { ProductLivePreview } from './product-live-preview';
 import { ProductNestedSections } from './product-nested-sections';
+
+function hasActiveVariants(product: Product | null): boolean {
+  return Boolean(product?.variants.some((variant) => variant.status !== 'archived'));
+}
 
 function toMutationPayload(value: ProductFormValues): ProductMutationPayload {
   return {
@@ -48,15 +53,10 @@ function toMutationPayload(value: ProductFormValues): ProductMutationPayload {
   };
 }
 
-export default function ProductForm({
-  initialData,
-  pageTitle
-}: {
-  initialData: Product | null;
-  pageTitle: string;
-}) {
+export default function ProductForm({ initialData }: { initialData: Product | null }) {
   const router = useRouter();
   const isEdit = !!initialData;
+  const hasSellableVariants = hasActiveVariants(initialData);
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions());
   const slugTouchedRef = useRef(isEdit);
   const skuTouchedRef = useRef(isEdit);
@@ -75,8 +75,17 @@ export default function ProductForm({
   );
 
   const statusOptions = useMemo(
-    () => PRODUCT_STATUS_OPTIONS.map((option) => ({ label: option.label, value: option.value })),
-    []
+    () =>
+      PRODUCT_STATUS_OPTIONS.map((option) => {
+        const blocked = option.value === 'active' && !hasSellableVariants;
+        return {
+          label: option.label,
+          value: option.value,
+          disabled: blocked,
+          disabledReason: blocked ? PUBLISH_REQUIRES_VARIANT_MESSAGE : undefined
+        };
+      }),
+    [hasSellableVariants]
   );
 
   const createMutation = useMutation({
@@ -128,12 +137,23 @@ export default function ProductForm({
     onSubmit: ({ value }) => {
       const payload = toMutationPayload(value);
       if (isEdit && initialData) {
-        updateMutation.mutate({ id: initialData.id, values: payload });
+        if (hasSellableVariants) {
+          const { price: _ignoredPrice, compare_at_price: _ignoredCompare, ...rest } = payload;
+          updateMutation.mutate({ id: initialData.id, values: rest });
+        } else {
+          updateMutation.mutate({ id: initialData.id, values: payload });
+        }
       } else {
         createMutation.mutate(payload);
       }
     }
   });
+
+  useEffect(() => {
+    if (!hasSellableVariants || !initialData) return;
+    form.setFieldValue('price', initialData.price);
+    form.setFieldValue('compare_at_price', initialData.compare_at_price ?? '');
+  }, [form, hasSellableVariants, initialData?.price, initialData?.compare_at_price]);
 
   const { FormTextField, FormSelectField, FormTextareaField, FormSwitchField } =
     useFormFields<ProductFormValues>();
@@ -146,7 +166,7 @@ export default function ProductForm({
             <div className='flex flex-col gap-4'>
               <Card>
                 <CardHeader>
-                  <CardTitle className='text-base font-medium'>{pageTitle}</CardTitle>
+                  <CardTitle className='text-base font-medium'>Basic info</CardTitle>
                 </CardHeader>
                 <CardContent className='flex flex-col gap-5'>
                   <FormTextField
@@ -216,21 +236,37 @@ export default function ProductForm({
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className='space-y-2'>
                   <CardTitle className='text-base font-medium'>Pricing</CardTitle>
+                  {hasSellableVariants ? (
+                    <p className='text-muted-foreground text-sm'>
+                      Pricing is set per variant below.{' '}
+                      <a
+                        href='#product-variants'
+                        className='text-foreground underline underline-offset-2'
+                      >
+                        Go to Variants & inventory
+                      </a>
+                    </p>
+                  ) : null}
                 </CardHeader>
                 <CardContent className='grid grid-cols-1 gap-5 sm:grid-cols-2'>
                   <FormTextField
                     name='price'
                     label='Price'
-                    required
+                    required={!hasSellableVariants}
                     type='number'
                     min={0}
                     step={0.01}
                     placeholder='0.00'
-                    validators={{
-                      onBlur: z.number({ message: 'Price is required' }).nonnegative()
-                    }}
+                    disabled={hasSellableVariants}
+                    validators={
+                      hasSellableVariants
+                        ? undefined
+                        : {
+                            onBlur: z.number({ message: 'Price is required' }).nonnegative()
+                          }
+                    }
                   />
                   <FormTextField
                     name='compare_at_price'
@@ -239,6 +275,7 @@ export default function ProductForm({
                     min={0}
                     step={0.01}
                     placeholder='Optional'
+                    disabled={hasSellableVariants}
                   />
                 </CardContent>
               </Card>
@@ -306,6 +343,7 @@ export default function ProductForm({
                     required
                     options={statusOptions}
                     placeholder='Select status'
+                    description={hasSellableVariants ? undefined : PUBLISH_REQUIRES_VARIANT_MESSAGE}
                   />
                   <FormSelectField
                     name='category_id'
