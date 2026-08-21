@@ -48,7 +48,6 @@ SQL: apply additive files in [`supabase/migrations/`](./supabase/migrations/) in
 ## Deploy (Vercel)
 
 1. Import this repo as **one** Vercel project.
-2. Set env vars from `.env.example`.
 3. Deploy. Storefront and dashboard ship together.
 
 ## Docs
