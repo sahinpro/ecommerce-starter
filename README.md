@@ -58,6 +58,4 @@ SQL: apply additive files in [`supabase/migrations/`](./supabase/migrations/) in
 | [CLAUDE.md](./CLAUDE.md) | Project conventions |
 
 ## Notes
-
-- Clerk is **not** used. Auth is Supabase only.
 - Storefront checkout is Cash on Delivery only. No payment gateway and no customer accounts.
