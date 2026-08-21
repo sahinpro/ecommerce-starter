@@ -75,27 +75,27 @@ function HeaderTools({
   const tone = inverted ? 'dark' : 'light';
 
   return (
-    <div className='flex items-center gap-3.5 md:h-4.5 md:gap-4'>
+    <div className='flex items-center gap-1 md:h-4.5 md:gap-4 ml-2 md:ml-0'>
       <button
         type='button'
         aria-label='Search'
         aria-expanded={searchOpen}
-        className='relative cursor-pointer'
+        className='relative inline-flex min-h-11 min-w-6 cursor-pointer items-center justify-center md:min-h-0 md:min-w-0'
         onClick={onSearch}
       >
-        <StorefrontIcon name='search' tone={tone} className='h-[14.11px] w-4' />
+        <StorefrontIcon name='search' tone={tone} className='size-4.25' />
       </button>
       <button
         type='button'
         onClick={onWishlist}
-        className='relative hidden cursor-pointer md:inline-flex'
+        className='relative inline-flex min-h-11 min-w-6 cursor-pointer items-center justify-center md:min-h-0 md:min-w-0'
         aria-label='Wishlist'
       >
-        <StorefrontIcon name='wishlist' tone={tone} className='h-[14.22px] w-4' />
+        <StorefrontIcon name='wishlist' tone={tone} className='size-4.25' />
         {wishlistCount > 0 ? (
           <span
             className={cn(
-              'absolute -top-2 -right-2 flex size-4 items-center justify-center text-[10px]',
+              'absolute top-1 -right-1 flex size-4 items-center justify-center text-[10px] md:-top-2 md:-right-2.5',
               inverted ? 'bg-sukoon-black text-white' : 'bg-white text-black'
             )}
           >
@@ -103,12 +103,16 @@ function HeaderTools({
           </span>
         ) : null}
       </button>
-      <Link href='/cart' className='relative cursor-pointer' aria-label='Shopping bag'>
+      <Link
+        href='/cart'
+        className='relative inline-flex min-h-11 min-w-6 cursor-pointer items-center justify-center md:min-h-0 md:min-w-0'
+        aria-label='Shopping bag'
+      >
         <StorefrontIcon name='bag' tone={tone} className='size-4.5' />
         {cartCount > 0 ? (
           <span
             className={cn(
-              'absolute -top-2 -right-2 flex size-4 items-center justify-center text-[10px]',
+              'absolute top-1 -right-1 flex size-4 items-center justify-center text-[10px] md:-top-2 md:-right-2.5',
               inverted ? 'bg-sukoon-black text-white' : 'bg-white text-black'
             )}
           >
