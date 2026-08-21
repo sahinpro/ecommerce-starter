@@ -31,7 +31,7 @@ cp .env.example .env.local
 bun run dev          # http://localhost:3000
 ```
 
-Admin: create a user in Supabase Auth, then open `/admin/sign-in`.
+Admin: create a user in Supabase Auth, then open `/admin/sign-in `.
 
 SQL: apply additive files in [`supabase/migrations/`](./supabase/migrations/) in the Supabase SQL editor (orders/settings, menus, then later catalog media/size-fit files). Do not replace a live `place_cod_order` function if checkout already works.
 
