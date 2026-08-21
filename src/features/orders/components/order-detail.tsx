@@ -13,6 +13,7 @@ import { notFound } from 'next/navigation';
 
 import { shippingAreaLabel } from '../constants';
 import { getOrderById } from '../service';
+import { OrderDeleteButton } from './order-delete-button';
 import { OrderStatusForm } from './order-status-form';
 
 export async function OrderDetail({ orderId }: { orderId: string }) {
@@ -100,8 +101,14 @@ export async function OrderDetail({ orderId }: { orderId: string }) {
               </StatusBadge>
             </div>
             <OrderStatusForm orderId={order.id} currentStatus={order.order_status} />
+            <OrderDeleteButton
+              orderId={order.id}
+              orderNumber={order.order_number}
+              orderStatus={order.order_status}
+            />
             <p className='text-muted-foreground text-xs leading-5'>
-              Cancelling restores stock once. Delivered marks COD payment as paid.
+              Cancelling restores stock once. Delivered marks COD payment as paid. Deleting is
+              permanent.
             </p>
           </CardContent>
         </Card>

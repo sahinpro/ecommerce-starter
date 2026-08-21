@@ -310,3 +310,48 @@ export async function updateOrderStatus(orderId: string, nextStatus: OrderStatus
   if (!order) throw new Error('Order not found');
   return order;
 }
+
+const LEFT_WAREHOUSE_STATUSES = new Set(['shipped', 'delivered']);
+
+/**
+ * Permanently delete orders after restoring stock when it is still held.
+ * Shipped/delivered orders are deleted without restoring (stock already left).
+ */
+export async function deleteOrders(ids: string[]): Promise<{ deleted: number }> {
+  await requireAdminUser();
+  const unique = Array.from(new Set(ids.filter((id) => id.trim().length > 0)));
+  if (unique.length === 0) {
+    throw new Error('No orders selected');
+  }
+
+  const admin = createSupabaseAdminClient();
+  let deleted = 0;
+
+  for (const id of unique) {
+    const { data, error: fetchError } = await admin
+      .from('orders')
+      .select('id, order_status, stock_restored')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError) throw new Error(fetchError.message);
+    if (!data) continue;
+
+    const row = data as { id: string; order_status: string | null; stock_restored: boolean | null };
+    const status = String(row.order_status ?? '');
+    const leftWarehouse = LEFT_WAREHOUSE_STATUSES.has(status);
+
+    if (!row.stock_restored && !leftWarehouse) {
+      const { error: cancelError } = await admin.rpc('cancel_order_and_restore_stock', {
+        p_order_id: id
+      });
+      if (cancelError) throw new Error(cancelError.message);
+    }
+
+    const { error: deleteError } = await admin.from('orders').delete().eq('id', id);
+    if (deleteError) throw new Error(deleteError.message);
+    deleted += 1;
+  }
+
+  return { deleted };
+}

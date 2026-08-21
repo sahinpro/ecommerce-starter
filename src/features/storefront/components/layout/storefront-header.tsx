@@ -49,9 +49,8 @@ function HeaderMenuButton({ open, onToggle, onHoverOpen, inverted }: HeaderMenuB
       aria-label='Open menu'
       aria-expanded={open}
     >
-      <Icons.menu className='hidden size-4 md:block' />
+      <Icons.menu className='hidden size-5.25 md:block' />
       <span className='md:hidden'>Menu</span>
-      <span className='hidden md:inline'>Menu</span>
     </button>
   );
 }

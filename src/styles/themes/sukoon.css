@@ -8,6 +8,8 @@
   --sukoon-header-height: 200px;
   --sukoon-announcement-height: 40px;
   --sukoon-nav-height: 160px;
+  --font-display:
+    garamond-premier-pro-display, var(--font-eb-garamond), Georgia, 'Times New Roman', serif;
 }
 
 [data-theme='sukoon'] {
@@ -45,6 +47,8 @@
   --sidebar-ring: oklch(0.15 0 0);
   --font-sans: var(--font-inter), Inter, sans-serif;
   --font-serif: Georgia, 'Times New Roman', var(--font-playfair-display), serif;
+  --font-display:
+    garamond-premier-pro-display, var(--font-eb-garamond), Georgia, 'Times New Roman', serif;
   --font-mono: var(--font-mono), 'Geist Mono', monospace;
   --radius: 0rem;
   --shadow-x: 0px;
@@ -105,4 +109,10 @@
 
 [data-theme='sukoon'] .font-serif {
   font-family: var(--font-serif);
+}
+
+[data-theme='sukoon'] .font-display,
+[data-theme='sukoon'] .product-title {
+  font-family:
+    garamond-premier-pro-display, var(--font-eb-garamond), Georgia, 'Times New Roman', serif;
 }

@@ -9,6 +9,7 @@ import {
   JetBrains_Mono,
   Merriweather,
   Mulish,
+  EB_Garamond,
   Playfair_Display,
   Noto_Sans_Mono,
   Outfit,
@@ -90,6 +91,11 @@ const fontPlayfairDisplay = Playfair_Display({
   variable: '--font-playfair-display'
 });
 
+const fontEbGaramond = EB_Garamond({
+  subsets: ['latin'],
+  variable: '--font-eb-garamond'
+});
+
 export const fontVariables = cn(
   fontSans.variable,
   fontMono.variable,
@@ -104,5 +110,6 @@ export const fontVariables = cn(
   fontSpaceMono.variable,
   fontJetBrainsMono.variable,
   fontMerriweather.variable,
-  fontPlayfairDisplay.variable
+  fontPlayfairDisplay.variable,
+  fontEbGaramond.variable
 );

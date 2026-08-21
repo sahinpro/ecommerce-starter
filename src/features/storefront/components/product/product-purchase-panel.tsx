@@ -188,15 +188,15 @@ export function ProductPurchasePanel({
   return (
     <div className={className}>
       <div className='flex items-start justify-between gap-4'>
-        <h1 className='font-serif text-3xl leading-tight'>{product.name}</h1>
+        <h1 className='product-title text-3xl leading-tight font-normal'>{product.name}</h1>
         <button
           type='button'
           onClick={() => toggleWishlist(product.id)}
           aria-label='Add to wishlist'
-          className='mt-1 cursor-pointer'
+          className='mt-1 shrink-0 cursor-pointer'
         >
           <Icons.heart
-            className={cn('size-4 text-sukoon-black', wishlisted && 'fill-black text-black')}
+            className={cn('size-5 text-sukoon-black', wishlisted && 'fill-black text-black')}
           />
         </button>
       </div>

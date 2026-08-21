@@ -27,7 +27,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang='en' suppressHydrationWarning data-theme={STOREFRONT_THEME}>
+    <html
+      lang='en'
+      suppressHydrationWarning
+      data-theme={STOREFRONT_THEME}
+      className={fontVariables}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeColorScript }} />
       </head>

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 type SukoonLogoProps = {
   className?: string;
   href?: string;
-  variant?: 'header' | 'footer';
+  variant?: 'header' | 'footer' | 'footerWide';
   /** Header only — white for hero overlay, black for solid / menu panels. */
   tone?: 'white' | 'black';
   onClick?: () => void;
@@ -23,6 +23,11 @@ const logoSrc = {
     src: '/sukoon/logo/sukoon-wordmark.svg',
     width: 455,
     height: 62
+  },
+  footerWide: {
+    src: '/sukoon/logo/sukoon-wordmark.svg',
+    width: 1820,
+    height: 248
   }
 } as const;
 
@@ -40,13 +45,17 @@ export function SukoonLogo({
           width: logoSrc.header.width,
           height: logoSrc.header.height
         }
-      : logoSrc.footer;
+      : logoSrc[variant];
 
   return (
     <Link
       href={href}
       onClick={onClick}
-      className={cn('inline-flex shrink-0 items-center', className)}
+      className={cn(
+        'inline-flex shrink-0 items-center',
+        variant === 'footerWide' && 'block w-full',
+        className
+      )}
       aria-label='Sukoon home'
     >
       <Image
@@ -57,7 +66,8 @@ export function SukoonLogo({
         className={cn(
           'block max-w-full',
           variant === 'header' && 'h-[19.54px] w-[143.785px]',
-          variant === 'footer' && 'h-15.5 w-113.75 max-w-full'
+          variant === 'footer' && 'h-15.5 w-113.75 max-w-full',
+          variant === 'footerWide' && 'h-auto w-full'
         )}
         unoptimized
         priority={variant === 'header'}

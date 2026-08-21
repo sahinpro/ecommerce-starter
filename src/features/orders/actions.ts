@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
 import { allowCheckout, CHECKOUT_RATE_LIMIT_MESSAGE } from '@/lib/rate-limit';
@@ -7,7 +8,7 @@ import { allowCheckout, CHECKOUT_RATE_LIMIT_MESSAGE } from '@/lib/rate-limit';
 import { placeCodOrderSchema } from './schemas/checkout';
 import { storeSettingsSchema } from './schemas/settings';
 import { isOrderStatus, type OrderStatus } from './constants';
-import { placeCodOrder, updateOrderStatus, updateStoreSettings } from './service';
+import { deleteOrders, placeCodOrder, updateOrderStatus, updateStoreSettings } from './service';
 import type { PlaceCodOrderResult, StoreSettings } from './types';
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -65,6 +66,39 @@ export async function updateOrderStatusAction(
     return {
       ok: false,
       error: error instanceof Error ? error.message : 'Could not update order'
+    };
+  }
+}
+
+const ORDER_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function deleteOrdersAction(
+  ids: string[]
+): Promise<ActionResult<{ deleted: number }>> {
+  if (!Array.isArray(ids)) {
+    return { ok: false, error: 'No orders selected' };
+  }
+
+  const unique = Array.from(
+    new Set(ids.filter((id): id is string => typeof id === 'string' && ORDER_ID_RE.test(id)))
+  );
+
+  if (unique.length === 0) {
+    return { ok: false, error: 'No orders selected' };
+  }
+  if (unique.length > 50) {
+    return { ok: false, error: 'Select up to 50 orders at a time' };
+  }
+
+  try {
+    const data = await deleteOrders(unique);
+    revalidatePath('/dashboard/orders');
+    unique.forEach((id) => revalidatePath(`/dashboard/orders/${id}`));
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not delete orders'
     };
   }
 }

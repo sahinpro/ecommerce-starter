@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSuspenseQuery } from '@tanstack/react-query';
 
 import { resolvedNavQueryOptions } from '@/features/navigation/api/queries';
@@ -10,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { SukoonLogo } from '../brand/sukoon-logo';
 
 export function StorefrontFooter() {
+  const pathname = usePathname();
+  const isHome = pathname === '/';
   const { data: shopNav } = useSuspenseQuery(resolvedNavQueryOptions('footer'));
   const shopLinks = navToFooterLinks(shopNav);
 
@@ -32,6 +35,50 @@ export function StorefrontFooter() {
       { label: 'Facebook', href: 'https://facebook.com' }
     ]
   };
+
+  if (!isHome) {
+    return (
+      <footer className='bg-sukoon-footer text-sukoon-black overflow-x-clip'>
+        <div className='mx-auto max-w-480 px-5 pt-10 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-10 md:pt-16 md:pb-8 lg:pt-20 lg:pb-10'>
+          <div className='flex flex-col gap-8 md:gap-10 lg:flex-row lg:items-start lg:justify-between'>
+            <nav
+              aria-label='Footer'
+              className='grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4 md:gap-x-10 lg:gap-x-16 xl:gap-x-24'
+            >
+              {Object.entries(footerLinks).map(([section, links]) => (
+                <div key={section}>
+                  <p className='mb-4 text-[12px] leading-3 font-bold tracking-[0.24px] uppercase md:mb-5'>
+                    {section}
+                  </p>
+                  <ul className='space-y-1 md:space-y-[15.39px]'>
+                    {links.map((link) => (
+                      <li key={link.label}>
+                        <Link
+                          href={link.href}
+                          className='flex min-h-11 items-center text-[13px] leading-3.25 tracking-[0.26px] transition-opacity hover:opacity-60 md:inline-block md:min-h-0'
+                          {...(isExternalHref(link.href)
+                            ? { target: '_blank', rel: 'noreferrer' }
+                            : {})}
+                        >
+                          {link.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+            <p className='w-full shrink-0 text-right text-[11px] leading-4 tracking-[0.44px] uppercase lg:w-auto lg:pt-0.5'>
+              Copyright {new Date().getFullYear()} © Sukoon
+            </p>
+          </div>
+
+          <SukoonLogo variant='footerWide' className='mt-12 w-full md:mt-24 lg:mt-36' />
+        </div>
+      </footer>
+    );
+  }
+
   return (
     <footer className='bg-sukoon-footer text-sukoon-black md:min-h-110' data-node-id='1:173'>
       <div className='relative mx-auto grid max-w-480 gap-16 px-4 pt-10 pb-10 lg:grid-cols-[450px_minmax(0,1fr)] lg:gap-17.5 lg:pb-25'>

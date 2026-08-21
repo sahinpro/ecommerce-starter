@@ -1,21 +1,8 @@
-import Link from 'next/link';
-
-import { StatusBadge } from '@/components/ui/status-badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import { formatMoney } from '@/lib/format-money';
-
-import { shippingAreaLabel } from '../constants';
 import { listOrders } from '../service';
 import type { OrderFilters } from '../types';
 import { OrdersDateFilter } from './orders-date-filter';
 import { OrdersLoadError } from './orders-load-error';
+import { OrdersTable } from './orders-table';
 
 export async function OrdersListing({ filters }: { filters?: OrderFilters }) {
   const applied = filters ?? { page: 1, limit: 50 };
@@ -47,53 +34,7 @@ export async function OrdersListing({ filters }: { filters?: OrderFilters }) {
             : 'No orders yet. Guest COD checkouts will appear here.'}
         </div>
       ) : (
-        <div className='bg-card rounded-lg border'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Shipping</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    <Link
-                      href={`/dashboard/orders/${order.id}`}
-                      className='cursor-pointer font-medium underline-offset-4 hover:underline'
-                    >
-                      {order.order_number || order.id.slice(0, 8)}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{order.customer_name}</TableCell>
-                  <TableCell>{order.customer_phone}</TableCell>
-                  <TableCell className='text-xs'>
-                    {shippingAreaLabel(order.shipping_area)}
-                  </TableCell>
-                  <TableCell>{formatMoney(order.total, order.currency)}</TableCell>
-                  <TableCell className='capitalize'>
-                    {order.payment_method} · {order.payment_status}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={order.order_status} />
-                  </TableCell>
-                  <TableCell>
-                    {order.created_at
-                      ? new Date(order.created_at).toLocaleDateString('en-BD')
-                      : '—'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <OrdersTable items={items} />
       )}
     </div>
   );

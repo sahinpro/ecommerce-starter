@@ -87,6 +87,40 @@ import {
 
 export type Icon = React.ComponentType<IconProps>;
 
+function GalleryCloseMark({ className, ...props }: React.ComponentProps<'svg'>) {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='28'
+      height='28'
+      viewBox='0 0 28 28'
+      fill='none'
+      className={className}
+      {...props}
+    >
+      <line x1='0.646447' y1='14.0815' x2='14.0815' y2='0.646477' stroke='currentColor' />
+      <line x1='14.081' y1='13.7886' x2='0.645988' y2='0.353583' stroke='currentColor' />
+    </svg>
+  );
+}
+
+function GalleryPlusMark({ className, ...props }: React.ComponentProps<'svg'>) {
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width='16'
+      height='16'
+      viewBox='0 0 16 16'
+      fill='none'
+      className={className}
+      {...props}
+    >
+      <line x1='8' y1='2.5' x2='8' y2='13.5' stroke='currentColor' />
+      <line x1='2.5' y1='8' x2='13.5' y2='8' stroke='currentColor' />
+    </svg>
+  );
+}
+
 export const Icons = {
   // General
   alertCircle: IconAlertCircle,
@@ -96,6 +130,8 @@ export const Icons = {
   checks: IconChecks,
   circleCheck: IconCircleCheck,
   close: IconX,
+  galleryClose: GalleryCloseMark,
+  galleryPlus: GalleryPlusMark,
   clock: IconClock,
   dots: IconDots,
   ellipsis: IconDotsVertical,
